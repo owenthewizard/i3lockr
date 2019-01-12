@@ -2,7 +2,7 @@
 
 Distort a screenshot and run `i3lock`.
 
-## Quick Start [Documentation](USAGE.md)
+## Quick Start [[Documentation]](USAGE.md)
 
 ```bash
 git clone --depth=1 git://github.com/owenthewizard/i3lockr.git && cd i3lockr
