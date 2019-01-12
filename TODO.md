@@ -1,0 +1,5 @@
+- [ ] Draw text
+- [ ] Vector lock icon
+- [ ] Text position
+- [ ] Shell completions
+- [ ] manpages

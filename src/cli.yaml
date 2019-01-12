@@ -1,0 +1,58 @@
+name: "this text gets replaced but it has to be here for the arguments to parse correctly"
+
+settings:
+    - TrailingVarArg
+
+args:
+    - text:
+        help: "Text to draw on the screen [UNINPLEMENTED]"
+        short: "t"
+        long: "text"
+        default_value: ""
+
+    - gravity:
+        help: "Text position"
+        short: "g"
+        long: "gravity"
+        default_value: "south"
+        possible_values: [ "north", "east", "south", "west" ]
+
+    - iter:
+        help: "Number of blur iterations"
+        short: "i"
+        long: "iter"
+        default_value: "1"
+
+    - strength:
+        help: "Blur strength"
+        short: "s"
+        long: "strength"
+        default_value: "3"
+
+    - dark:
+        help: "Darkens image by an amount"
+        short: "d"
+        long: "dark"
+        default_value: "-36"
+        allow_hyphen_values: true
+
+    - scale:
+        help: "Scale factor for faux-blur. Divisor of 1, so 5 == 20%"
+        short: "f"
+        long: "scale"
+        default_value: "2"
+
+    - invert:
+        help: "Draw the lock image as an invert mask on the background, i.e. invert every pixel on the background where the same pixel on the lock image has >50% alpha"
+        long: "--invert"
+
+    - lock:
+        help: "Path to lock image"
+        short: "l"
+        long: "lock"
+        takes_value: true
+
+    - i3lock:
+        help: "Args to pass to i3lock"
+        index: 1
+        multiple: true

@@ -1,0 +1,50 @@
+[package]
+name = "i3lockr"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+edition = "2018"
+repository = "https://github.com/owenthewizard/i3lockr"
+keywords = ["i3", "i3lock", "i3lockr", "i3lock-color", "lock"]
+authors = ["Owen Walpole <owenthewizard@hotmail.com>"]
+description = "Distort a screenshot and run i3lock"
+publish = false
+
+[dependencies]
+#font-loader = "0.7.0"
+libc = "0.2.46"
+mktemp-rs = "0.2.0"
+
+[dependencies.clap]
+version = "2.32.0"
+default-features = false
+features = ["yaml"]
+
+#[dependencies.structopt]
+#version = "0.2.14"
+#default-features = false
+
+[dependencies.image]
+version = "0.21.0"
+default-features = false
+features = ["png_codec"]
+
+[dependencies.xcb]
+version = "0.8.2"
+default-features = false
+features = ["randr"]
+
+[dependencies.xcb-util]
+version = "0.2.0"
+default-features = false
+features = ["image"]
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+
+[profile.bench]
+codegen-units = 1
+lto = "thin"
+
+[profile.dev]
+opt-level = 2
