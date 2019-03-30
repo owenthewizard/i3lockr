@@ -21,6 +21,11 @@ With `--invert`
 
 With the default options on a 1080p monitor, `i3lockr` takes less than half a second to run!
 
+## Important Notes
+
+The exit status of `i3lockr` is not reliable!
+That means that `i3lockr && systemctl suspend` may not lock the screen if there was an error.
+
 ### Coding Style
 
 Obey `rustfmt` and Rust 2018 conventions.
