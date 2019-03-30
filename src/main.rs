@@ -1,6 +1,7 @@
 use std::cmp::min;
 use std::process::Command;
-use std::time::Instant;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 
 use clap::{crate_authors, crate_description, crate_name, crate_version, load_yaml, value_t, App};
 
@@ -105,9 +106,13 @@ fn main() {
     args.push("-i");
     args.push(&outfile.path());
     debug!("Calling i3lock with arguments: {:?}", args);
-    let out = Command::new("i3lock").args(args).output().unwrap();
+    let mut out = Command::new("i3lock").args(args.clone()).spawn().unwrap(); // clone args to use later, could also flag a bool or something
 
-    debug!("{:?}", out);
+    if args.contains(&"--nofork") || args.contains(&"-n") {
+        let _ = out.wait();
+    } else {
+        sleep(Duration::from_millis(10)); // dumb solution, without this the temp file is dropped before i3lock starts
+    }
 }
 
 fn process_screenshot(img: &mut DynamicImage, scale: u32, darkness: i32, blur_i: u8, blur_s: f32) {
