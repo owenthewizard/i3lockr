@@ -56,3 +56,9 @@ args:
         help: "Args to pass to i3lock"
         index: 1
         multiple: true
+
+    - nofork:
+        help: "Wait on i3lock instead of forking"
+        short: "n"
+        long: "no-fork"
+
