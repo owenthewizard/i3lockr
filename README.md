@@ -15,6 +15,7 @@ Remeber to strip the binary!
 
 Without `--invert`
 ![screenshot without --invert](.github/no-invert.png)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fowenthewizard%2Fi3lockr.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fowenthewizard%2Fi3lockr?ref=badge_shield)
 
 With `--invert`
 ![screenshot with --invert](.github/invert.png)
@@ -51,6 +52,9 @@ See [the list of contributors](https://github.com/owenthewizard/i3lockr/contribu
 `i3lockr` is primarily distributed under the terms of both the MIT license and the Apache License (Version 2.0).
 
 See [LICENSE-APACHE](LICENSE-APACHE.md) and [LICENSE-MIT](LICENSE-MIT.md) for details.
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fowenthewizard%2Fi3lockr.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fowenthewizard%2Fi3lockr?ref=badge_large)
 
 ## Acknowledgments
 
