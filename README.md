@@ -4,12 +4,14 @@ Distort a screenshot and run `i3lock`.
 
 ## Quick Start [[Documentation]](USAGE.md)
 
+Signed binary releases are availible [here](https://github.com/owenthewizard/i3lockr/releases).
+
 ```bash
 git clone --depth=1 git://github.com/owenthewizard/i3lockr.git && cd i3lockr
-cargo install --path .
-i3lockr --invert -- --nofork --noempty
+cargo build --release
+sudo strip -s target/release/i3lockr /usr/local/bin/i3lockr
+i3lockr --invert -- --nofork --noempty # or your favorite args
 ```
-Remeber to strip the binary!
 
 ## Screenshots
 
