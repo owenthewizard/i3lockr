@@ -99,16 +99,23 @@ fn main() {
         }
     );
 
-    let mut args = match args.values_of("i3lock") {
-        Some(args) => args.collect::<Vec<_>>(),
+    let mut nofork = false;
+    let mut i3lock_args = match args.values_of("i3lock") {
+        Some(args) => {
+            let v = args.collect::<Vec<_>>();
+            if v.contains(&"-n") || v.contains(&"--nofork") {
+                nofork = true;
+            }
+            v
+        },
         None => Vec::with_capacity(2),
     };
-    args.push("-i");
-    args.push(&outfile.path());
-    debug!("Calling i3lock with arguments: {:?}", args);
-    let mut out = Command::new("i3lock").args(args.clone()).spawn().unwrap(); // clone args to use later, could also flag a bool or something
+    i3lock_args.push("-i");
+    i3lock_args.push(&outfile.path());
+    debug!("Calling i3lock with arguments: {:?}", i3lock_args);
+    let mut out = Command::new("i3lock").args(i3lock_args).spawn().unwrap(); // clone args to use later, could also flag a bool or something
 
-    if args.contains(&"--nofork") || args.contains(&"-n") {
+    if nofork {
         let _ = out.wait();
     } else {
         sleep(Duration::from_millis(10)); // dumb solution, without this the temp file is dropped before i3lock starts
