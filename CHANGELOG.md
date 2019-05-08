@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Complete rewrite with fewer dependencies
 - Pass image to `i3lock` via `/dev/stdin` instead of temporay file
+- Pass raw bytes to `i3lock` rather than encoding PNG
+
+## [0.1.2]
+### Changed
+- Don't `clone()` `args`, flag a `bool` instead
 
 ### Fixed
 - Hacky `thread::sleep` solution no longer necessary

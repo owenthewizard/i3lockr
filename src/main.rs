@@ -107,7 +107,7 @@ fn main() {
                 nofork = true;
             }
             v
-        },
+        }
         None => Vec::with_capacity(2),
     };
     i3lock_args.push("-i");
