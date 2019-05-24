@@ -54,12 +54,8 @@ fn main() {
     //TODO draw text
 
     // this is a bit gross
-    let mut nofork = false;
-    if args.i3lock.contains(&OsStr::new("-n").to_os_string())
-        || args.i3lock.contains(&OsStr::new("--nofork").to_os_string())
-    {
-        nofork = true;
-    }
+    let nofork = args.i3lock.contains(&OsStr::new("-n").to_os_string())
+        || args.i3lock.contains(&OsStr::new("--nofork").to_os_string());
 
     debug!("Calling i3lock with args: {:?}", args.i3lock);
     let mut cmd = Command::new("i3lock")
