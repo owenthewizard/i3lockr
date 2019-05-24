@@ -1,14 +1,12 @@
 use std::cmp::min;
-use std::process::Command;
-use std::thread::sleep;
-use std::time::{Duration, Instant};
+use std::io::Write;
+use std::process::{Command, Stdio};
+use std::time::Instant;
 
 use clap::{crate_authors, crate_description, crate_name, crate_version, load_yaml, value_t, App};
 
 use image::DynamicImage::ImageRgba8;
 use image::{imageops, DynamicImage, FilterType, GenericImageView, Pixel, Rgba, RgbaImage};
-
-use mktemp::TempFile;
 
 use xcb::{randr, Connection};
 
@@ -85,20 +83,6 @@ fn main() {
     let mut shot = shot.to_rgba();
     draw_stuff(&mut shot, &lock, args.occurrences_of("invert") > 0);
 
-    let outfile = match TempFile::new("i3lockr-", ".png") {
-        Ok(tf) => tf,
-        Err(e) => panic!("Failed to create temporary file: {}", e),
-    };
-    time_it!(
-        "Exporting image",
-        match shot.save(&outfile.path()) {
-            Ok(()) => (),
-            Err(e) => {
-                panic!("Failed to export image: {}", e);
-            }
-        }
-    );
-
     let mut nofork = false;
     let mut i3lock_args = match args.values_of("i3lock") {
         Some(args) => {
@@ -110,15 +94,18 @@ fn main() {
         }
         None => Vec::with_capacity(2),
     };
+    let arg = format!("--raw={}x{}:rgbx", shot.width(), shot.height());
+    i3lock_args.extend_from_slice(&["-i", "/dev/stdin", &arg]);
+    /*
     i3lock_args.push("-i");
-    i3lock_args.push(&outfile.path());
+    i3lock_args.push("/dev/stdin");
+    */
     debug!("Calling i3lock with arguments: {:?}", i3lock_args);
-    let mut out = Command::new("i3lock").args(i3lock_args).spawn().unwrap(); // clone args to use later, could also flag a bool or something
+    let mut out = Command::new("i3lock").args(i3lock_args).stdin(Stdio::piped()).spawn().unwrap();
+    out.stdin.as_mut().unwrap().write_all(&shot.into_vec()).unwrap();
 
     if nofork {
         let _ = out.wait();
-    } else {
-        sleep(Duration::from_millis(10)); // dumb solution, without this the temp file is dropped before i3lock starts
     }
 }
 
