@@ -1,6 +1,4 @@
-use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
-use std::fs;
 use std::str::FromStr;
 
 /// Returns a closure that checks if the argument is greater than ```n```.
@@ -22,23 +20,6 @@ where
     }
 }
 
-/// Checks that ```s``` is the path to a valid PNG file.
-/// Mostly unimplemented
-// sadly can't be AsRef<OsStr> because of what structopt expects
-pub fn is_png(s: &OsStr) -> Result<(), OsString> {
-    eprintln!("Warning: PNG check bypassed");
-    let metadata = match fs::metadata(s) {
-        Ok(meta) => meta,
-        Err(e) => return Err(e.to_string().into()),
-    };
-    if metadata.is_file() {
-        Ok(())
-    } else {
-        Err("must be a PNG file".into())
-    }
-    //TODO add PNG header check or whatever
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -54,13 +35,5 @@ mod tests {
         assert!(greater_than_five(four).is_err());
         assert!(greater_than_five(five).is_err());
         assert!(greater_than_five(six).is_ok());
-    }
-
-    #[test]
-    fn is_png_validator() {
-        assert!(is_png(OsStr::new("/some/nonexist/file")).is_err());
-        assert!(is_png(OsStr::new("/")).is_err());
-        assert!(is_png(OsStr::new(".github/readme.png")).is_ok());
-        unimplemented!();
     }
 }
