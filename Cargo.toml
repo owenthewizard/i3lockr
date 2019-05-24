@@ -1,49 +1,35 @@
 [package]
 name = "i3lockr"
-version = "0.1.2"
-license = "MIT OR Apache-2.0"
-edition = "2018"
-repository = "https://github.com/owenthewizard/i3lockr"
-keywords = ["i3", "i3lock", "i3lockr", "i3lock-color", "lock"]
-authors = ["Owen Walpole <owenthewizard@hotmail.com>"]
 description = "Distort a screenshot and run i3lock"
-publish = false
+version = "1.0.0"
+license = "MIT OR Apache-2.0"
+authors = ["Owen Walpole <owenthewizard@hotmail.com>"]
+repository = "https://github.com/owenthewizard/i3lockr"
+readme = "README.md"
+keywords = ["i3lockr", "i3lock", "i3lock-fancy", "blur", "i3lock-color" ]
+categories = ["command-line-utilities", "multimedia::images"]
+edition = "2018"
 
 [dependencies]
-#font-loader = "0.7.0"
-libc = "0.2.46"
+libc = "0.2" # should be same as xcb
+num_cpus = "1"
 
-[dependencies.clap]
-version = "2.32.0"
+[dependencies.structopt]
+version = "0.2"
 default-features = false
-features = ["yaml"]
-
-#[dependencies.structopt]
-#version = "0.2.14"
-#default-features = false
-
-[dependencies.image]
-version = "0.21.0"
-default-features = false
-features = ["png_codec"]
 
 [dependencies.xcb]
-version = "0.8.2"
-default-features = false
-features = ["randr"]
+version = "0.8"
+features = ["randr", "shm"]
 
-[dependencies.xcb-util]
-version = "0.2.0"
-default-features = false
-features = ["image"]
+[build-dependencies]
+cc = "1"
+
+[features]
+suggestions = ["structopt/suggestions"]
+color = ["structopt/color"]
+default = ["suggestions", "color"]
 
 [profile.release]
-codegen-units = 1
-lto = "thin"
-
-[profile.bench]
-codegen-units = 1
-lto = "thin"
-
-[profile.dev]
-opt-level = 2
+lto = true
+codegen-units=1
