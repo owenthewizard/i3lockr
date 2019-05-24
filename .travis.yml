@@ -8,3 +8,5 @@ matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
+  before_install:
+    - sudo apt install -y libxcb-randr0-dev
