@@ -1,14 +1,10 @@
 language: rust
 cache: cargo
+rust: 
+  - stable
+  - beta
+  - nightly 
 matrix:
-  include:
-    - rust: stable
-    - rust: beta
+  allow_failures:
     - rust: nightly
-      script:
-        - cargo clippy -- -W clippy::nursery -W clippy::pedantic -W clippy::cargo
-        - cargo build --verbose
-        - cargo fmt -- --check
-    fast_finish: true
-    allow_failures:
-      - rust: nightly
+  fast_finish: true
