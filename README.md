@@ -17,13 +17,13 @@ i3lockr --blur 25 -- --nofork --ignore-empty-password # use your favorite args
 ## Screenshots
 
 Without `--blur`
-![screenshot without blur](.github/blur-0)
+![screenshot without blur](.github/blur-0.png)
 
 With `--blur=10`
-![screenshot with blur 10](.github/blur-10)
+![screenshot with blur 10](.github/blur-10.png)
 
 With `--blur=25`
-![screenshot with blur 25](.github/blur-25)
+![screenshot with blur 25](.github/blur-25.png)
 
 `i3lockr` (since v1.0.0) is incredibly fast at all blur levels, try timing it yourself with `time`.
 
