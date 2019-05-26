@@ -79,8 +79,4 @@ fn main() {
         debug!("Asked i3lock not to fork, calling wait()");
         let _ = cmd.wait();
     }
-
-    for pixel in shot.data.chunks_exact_mut(4) {
-        unsafe { pixel.get_unchecked_mut(0..4).reverse() };
-    }
 }
