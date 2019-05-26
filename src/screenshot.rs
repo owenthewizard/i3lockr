@@ -35,7 +35,7 @@ pub struct Screenshot<'a> {
     monitors: Vec<(u16, u16)>,
     width: u16,
     height: u16,
-    shmid: i32,
+    shmid: libc::c_int,
 }
 
 impl<'a> Screenshot<'a> {
@@ -123,7 +123,7 @@ impl<'a> Screenshot<'a> {
         d: Drawable,
         w: u16,
         h: u16,
-    ) -> Result<(&'a mut [u8], i32), I3LockrError> {
+    ) -> Result<(&'a mut [u8], libc::c_int), I3LockrError> {
         // setup POSIX SHM
         let shmid;
         unsafe {
