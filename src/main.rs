@@ -44,7 +44,7 @@ fn main() {
             shot.data,
             shot.width() as libc::c_int,
             shot.height() as libc::c_int,
-            args.radius.unwrap_or_else(|| unreachable!()), // should be safe because validators ran already
+            args.radius.unwrap_or_else(|| unreachable!()) as libc::c_int, // should be safe because validators ran already
         );
         timer_time!("Blurring", blur);
     }

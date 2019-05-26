@@ -27,7 +27,7 @@ pub struct Cli {
         long = "blur",
         raw(validator = "validators::greater_than(0)")
     )]
-    pub radius: Option<i32>,
+    pub radius: Option<u8>,
 
     /// Only place one icon. Default is to place an icon on each monitor. [NYI]
     #[structopt(long = "one-icon")]
