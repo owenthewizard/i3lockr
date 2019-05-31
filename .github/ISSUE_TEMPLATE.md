@@ -1,7 +1,7 @@
 # Sanity Checks
 
 - [ ] Using a recent enough `i3lock`? (TODO i3/i3lock#231)
-- [ ] All libraries installed? Check `ldd $(which i3lock)` and ensure there are no "not found" messages.
+- [ ] All libraries installed? `i3lockr` requires `libxcb` including the RandR and SHM extensions. Many distros require a `-dev` or `-devel` package to be installed to compile software. Check `ldd $(which i3lockr)` for required runtime libraries.
 
 # Important Info
 
