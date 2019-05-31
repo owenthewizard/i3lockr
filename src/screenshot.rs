@@ -57,32 +57,19 @@ impl<'a> Screenshot<'a> {
         let reply = handle_reply!(cookie.get_reply());
 
         // grab their widths and heights
-        /*
-        let mut monitors = Vec::with_capacity(reply.crtcs().len());
-        for crtc in reply.crtcs() {
-            let cookie = randr::get_crtc_info(&conn, *crtc, reply.timestamp());
-            let reply = handle_reply!(cookie.get_reply());
-
-            // skip disconnected outputs
-            if reply.mode() != 0 {
-                monitors.push((reply.width() as usize, reply.height() as usize));
-            }
-        }
-        monitors.shrink_to_fit();
-        */
         // this silently throws away errors...
         let monitors = reply
             .crtcs()
             .iter()
-            //.map(|x| randr::get_crtc_info(&conn, *x, reply.timestamp()))
-            //.filter_map(|x| x.get_reply().ok())
             .filter_map(|x| {
                 randr::get_crtc_info(&conn, *x, reply.timestamp())
                     .get_reply()
                     .ok()
             })
-            .filter(|x| x.mode() != 0)
-            .map(|x| (x.width(), x.height()))
+            .filter_map(|x| match x.mode() {
+                0 => None,
+                _ => Some((x.width(), x.height())),
+            })
             .collect();
 
         // real work done here
@@ -95,19 +82,6 @@ impl<'a> Screenshot<'a> {
             Ok((sl, id)) => (sl, id),
             Err(e) => return Err(e),
         };
-
-        // BGRA --> RGBA
-        /*
-        assert!(img.len() % 4 == 0);
-        unsafe {
-            for pixel in img.chunks_exact_mut(4) {
-                pixel.get_unchecked_mut(0..3).reverse();
-                // alpha byte is unreliable, 255 by default but sometimes 0 (e.g. with compton and glx
-                // backend), so let's set it to always be 255
-                *pixel.get_unchecked_mut(3) = 255;
-            }
-        }
-        */
 
         Ok(Screenshot {
             data: img,
@@ -185,17 +159,6 @@ impl<'a> Screenshot<'a> {
     pub const fn monitors(&self) -> &Vec<(u16, u16)> {
         &self.monitors
     }
-
-    /*
-    pub fn get_pixel(&self, x: usize, y: usize) -> &[u8] {
-    assert!(x < self.width);
-    assert!(y < self.height);
-    let i = x + self.width * y * 4;
-    unsafe {
-    self.data.get_unchecked(i..i + 4)
-    }
-    }
-    */
 }
 
 impl<'a> Drop for Screenshot<'a> {

@@ -102,7 +102,7 @@ fn main() {
                         match unsafe { src.get_unchecked(3) } {
                             // alpha byte
                             0 => continue,                   // skip transparent pixels
-                            255 => sl.copy_from_slice(&src), // opaque pixels are a dumb copy
+                            255 => sl.copy_from_slice(src), // opaque pixels are a dumb copy
                             _ => {
                                 // anything else need alpha blending
                                 unsafe {

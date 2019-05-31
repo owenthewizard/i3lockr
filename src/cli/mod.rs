@@ -57,7 +57,6 @@ pub struct Cli {
         long = "icon",
         value_name = "file.png",
         parse(from_os_str),
-        //raw(validator_os = "validators::is_png")
     )]
     pub path: Option<PathBuf>,
 
