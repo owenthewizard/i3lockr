@@ -94,7 +94,9 @@ fn main() {
                     if args.invert {
                         match unsafe { src.get_unchecked(3) } {
                             0 => continue,
-                            _ => unsafe { sl.get_unchecked_mut(0..4).iter_mut().for_each(|p| *p = !*p) },
+                            _ => unsafe {
+                                sl.get_unchecked_mut(0..4).iter_mut().for_each(|p| *p = !*p)
+                            },
                         }
                     } else {
                         match unsafe { src.get_unchecked(3) } {
@@ -103,7 +105,19 @@ fn main() {
                             255 => sl.copy_from_slice(&src), // opaque pixels are a dumb copy
                             _ => {
                                 // anything else need alpha blending
-                                unimplemented!("alpha blending");
+                                unsafe {
+                                    let a = *src.get_unchecked(3) as usize + 1;
+                                    let inv_a = 256 - *src.get_unchecked(3) as usize;
+                                    sl.get_unchecked_mut(0..4)
+                                        .iter_mut()
+                                        .zip(src.get_unchecked(0..4).iter())
+                                        .for_each(|(dst_p, src_p)| {
+                                            *dst_p = ((a * *dst_p as usize
+                                                + inv_a * *src_p as usize)
+                                                >> 8)
+                                                as u8; // this overflows...
+                                        });
+                                }
                             }
                         }
                     }
