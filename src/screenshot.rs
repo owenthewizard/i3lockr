@@ -32,7 +32,7 @@ macro_rules! handle_reply {
 #[derive(Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct Screenshot<'a> {
     pub data: &'a mut [u8],
-    monitors: Vec<(u16, u16)>,
+    pub monitors: Vec<(u16, u16)>, // can't access this via method or else borrow checker gets indigestion
     width: u16,
     height: u16,
     shmid: libc::c_int,
@@ -154,10 +154,6 @@ impl<'a> Screenshot<'a> {
 
     pub const fn height(&self) -> u16 {
         self.height
-    }
-
-    pub const fn monitors(&self) -> &Vec<(u16, u16)> {
-        &self.monitors
     }
 }
 

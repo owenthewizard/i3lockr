@@ -18,6 +18,7 @@ mod macros;
 use macros::*;
 
 fn main() {
+    // parse args, handle custom `--version`
     let args = Cli::from_args();
     if args.version {
         eprintln!(
@@ -34,12 +35,14 @@ fn main() {
     unsafe { DEBUG = args.debug };
     debug!("Found args: {:?}", args);
 
+    // take the screenshot
     timer_start!(screenshot);
     let shot =
         Screenshot::capture().unwrap_or_else(|e| color_panic!("Failed to take screenshot: {}", e));
     timer_time!("Capturing screenshot", screenshot);
-    debug!("Found monitors: {:?}", shot.monitors());
+    debug!("Found monitors: {:?}", shot.monitors);
 
+    // blur
     if let Some(r) = args.radius {
         timer_start!(blur);
         ffi::blur(
@@ -51,84 +54,101 @@ fn main() {
         timer_time!("Blurring", blur);
     }
 
-    //TODO invert
+    // overlay/invert on each monitor
     if let Some(path) = args.path {
         timer_start!(decode);
         let image = imagefmt::read(path, ColFmt::BGRA)
             .unwrap_or_else(|e| color_panic!("Failed to read image: {}", e));
         timer_time!("Decoding image", decode);
-        let (mut x_off, mut y_off) = match args.pos {
-            cli::Position::Center => (
-                (shot.width() as usize / 2 - image.w / 2) as isize, // isize because Coords below are isize and match blocks must be homogeneous
-                (shot.height() as usize / 2 - image.h / 2) as isize,
-            ),
-            cli::Position::Coords(x, y) => (x, y),
-        };
 
-        while x_off.is_negative() {
-            x_off += shot.width() as isize;
-        }
-        while y_off.is_negative() {
-            y_off += shot.height() as isize;
-        }
-        while x_off >= shot.width() as isize {
-            x_off -= shot.width() as isize;
-        }
-        while y_off >= shot.height() as isize {
-            y_off -= shot.height() as isize;
-        }
+        for (i, (w, h)) in shot
+            .monitors
+            .iter()
+            .map(|(a, b)| (*a as usize, *b as usize))
+            .enumerate()
+        {
+            if args.ignore.contains(&i) {
+                debug!("Ignoring monitor {}", i);
+                continue;
+            }
 
-        let (x_off, y_off) = (x_off as usize, y_off as usize);
-        debug!("Calculated image position: ({},{})", x_off, y_off);
+            let (mut x_off, mut y_off) = match args.pos {
+                cli::Position::Center => (
+                    (w / 2 - image.w / 2) as isize, // isize because Coords below are isize and match blocks must be homogeneous
+                    (h / 2 - image.h / 2) as isize,
+                ),
+                cli::Position::Coords(x, y) => (x, y),
+            };
 
-        // should be able to rewrite this to write rows at once
-        timer_start!(overlay);
-        for x in 0..image.w {
-            for y in 0..image.h {
-                let i_dst = (x + x_off + shot.width() as usize * (y + y_off)) * 4;
-                let i_src = (x + image.w * y) * 4;
-                let src = unsafe { image.buf.get_unchecked(i_src..i_src + 4) };
-                let dst = shot.data.get_mut(i_dst..i_dst + 4);
+            while x_off.is_negative() {
+                x_off += w as isize;
+            }
+            while y_off.is_negative() {
+                y_off += h as isize;
+            }
+            while x_off >= shot.width() as isize {
+                x_off -= w as isize;
+            }
+            while y_off >= shot.height() as isize {
+                y_off -= h as isize;
+            }
 
-                if let Some(sl) = dst {
-                    if args.invert {
-                        match unsafe { src.get_unchecked(3) } {
-                            0 => continue,
-                            _ => unsafe {
-                                sl.get_unchecked_mut(0..4).iter_mut().for_each(|p| *p = !*p)
-                            },
-                        }
-                    } else {
-                        match unsafe { src.get_unchecked(3) } {
-                            // alpha byte
-                            0 => continue,                   // skip transparent pixels
-                            255 => sl.copy_from_slice(src), // opaque pixels are a dumb copy
-                            _ => {
-                                // anything else need alpha blending
-                                unsafe {
-                                    let a = *src.get_unchecked(3) as usize + 1;
-                                    let inv_a = 256 - *src.get_unchecked(3) as usize;
-                                    sl.get_unchecked_mut(0..4)
-                                        .iter_mut()
-                                        .zip(src.get_unchecked(0..4).iter())
-                                        .for_each(|(dst_p, src_p)| {
-                                            *dst_p = ((a * *dst_p as usize
-                                                + inv_a * *src_p as usize)
-                                                >> 8)
-                                                as u8; // this overflows...
-                                        });
+            let (x_off, y_off) = (x_off as usize, y_off as usize);
+            debug!(
+                "Calculated image position on monitor {}: ({},{})",
+                i, x_off, y_off
+            );
+
+            // should be able to rewrite this to write rows at once
+            timer_start!(overlay);
+            for x in 0..image.w {
+                for y in 0..image.h {
+                    let i_dst = (x + x_off + w * (y + y_off)) * 4;
+                    let i_src = (x + image.w * y) * 4;
+                    let src = unsafe { image.buf.get_unchecked(i_src..i_src + 4) };
+                    let dst = shot.data.get_mut(i_dst..i_dst + 4);
+
+                    if let Some(sl) = dst {
+                        if args.invert {
+                            match unsafe { src.get_unchecked(3) } {
+                                0 => continue,
+                                _ => unsafe {
+                                    sl.get_unchecked_mut(0..4).iter_mut().for_each(|p| *p = !*p)
+                                },
+                            }
+                        } else {
+                            match unsafe { src.get_unchecked(3) } {
+                                // alpha byte
+                                0 => continue, // skip transparent pixels
+                                255 => sl.copy_from_slice(src), // opaque pixels are a dumb copy
+                                _ => {
+                                    // anything else need alpha blending
+                                    unsafe {
+                                        let a = *src.get_unchecked(3) as usize + 1;
+                                        let inv_a = 256 - *src.get_unchecked(3) as usize;
+                                        sl.get_unchecked_mut(0..4)
+                                            .iter_mut()
+                                            .zip(src.get_unchecked(0..4).iter())
+                                            .for_each(|(dst_p, src_p)| {
+                                                *dst_p = ((a * *dst_p as usize
+                                                    + inv_a * *src_p as usize)
+                                                    >> 8)
+                                                    as u8
+                                            });
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+            timer_time!("Overlaying/inverting image", overlay);
         }
-        timer_time!("Overlaying/inverting image", overlay);
     }
 
     //TODO draw text
 
+    // call i3lock and pass image bytes
     // this is a bit gross
     let nofork = args.i3lock.contains(&OsStr::new("-n").to_os_string())
         || args.i3lock.contains(&OsStr::new("--nofork").to_os_string());

@@ -29,9 +29,14 @@ pub struct Cli {
     )]
     pub radius: Option<u8>,
 
-    /// Only place one icon. Default is to place an icon on each monitor. [NYI]
-    #[structopt(long = "one-icon")]
-    pub one_icon: bool,
+    /// Don't overlay an icon on these monitors. Example: 0 2
+    #[structopt(
+        long = "ignore-monitors",
+        value_name = "0 1 2",
+        takes_value = true,
+        multiple = true
+    )]
+    pub ignore: Vec<usize>,
 
     /// Interpret the icon as a mask, inverting masked pixels
     /// on the screenshot. Try it to see an example.
@@ -56,12 +61,11 @@ pub struct Cli {
         short = "i",
         long = "icon",
         value_name = "file.png",
-        parse(from_os_str),
+        parse(from_os_str)
     )]
     pub path: Option<PathBuf>,
 
-    /// Arguments to pass to i3lock. '--' must be used. Example: "-- --nofork
-    /// --ignore-empty-password"
+    /// Arguments to pass to i3lock. Example: "-- --nofork --ignore-empty-password"
     #[structopt(
         value_name = "i3lock",
         takes_value = true,
