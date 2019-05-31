@@ -64,6 +64,7 @@ fn main() {
             ),
             cli::Position::Coords(x, y) => (x, y),
         };
+
         while x_off.is_negative() {
             x_off += shot.width() as isize;
         }
@@ -76,6 +77,7 @@ fn main() {
         while y_off >= shot.height() as isize {
             y_off -= shot.height() as isize;
         }
+
         let (x_off, y_off) = (x_off as usize, y_off as usize);
         debug!("Calculated image position: ({},{})", x_off, y_off);
 
@@ -85,14 +87,17 @@ fn main() {
             for y in 0..image.h {
                 let i_dst = (x + x_off + shot.width() as usize * (y + y_off)) * 4;
                 let i_src = (x + image.w * y) * 4;
-                let src = &image.buf[i_src..i_src + 4];
+                let src = unsafe { image.buf.get_unchecked(i_src..i_src + 4) };
                 let dst = shot.data.get_mut(i_dst..i_dst + 4);
 
                 if let Some(sl) = dst {
                     if args.invert {
-                        unimplemented!("invert");
+                        match unsafe { src.get_unchecked(3) } {
+                            0 => continue,
+                            _ => unsafe { sl.get_unchecked_mut(0..4).iter_mut().for_each(|p| *p = !*p) },
+                        }
                     } else {
-                        match src[3] {
+                        match unsafe { src.get_unchecked(3) } {
                             // alpha byte
                             0 => continue,                   // skip transparent pixels
                             255 => sl.copy_from_slice(&src), // opaque pixels are a dumb copy

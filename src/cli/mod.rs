@@ -33,12 +33,12 @@ pub struct Cli {
     #[structopt(long = "one-icon")]
     pub one_icon: bool,
 
-    /// Interpret the icon as a mask, inverting masked pixels [NYI]
+    /// Interpret the icon as a mask, inverting masked pixels
     /// on the screenshot. Try it to see an example.
     #[structopt(long = "invert")]
     pub invert: bool,
 
-    /// Icon placement, "center" to center, [NYI]
+    /// Icon placement, "center" to center,
     /// "x, y" (from top-left), or "-x,-y" (from bottom-right).
     /// Has no effect without --icon.
     /// Example: "(945, -20)"
@@ -51,7 +51,7 @@ pub struct Cli {
     )]
     pub pos: Position,
 
-    /// Path to icon to overlay on screenshot. [NYI]
+    /// Path to icon to overlay on screenshot.
     #[structopt(
         short = "i",
         long = "icon",
