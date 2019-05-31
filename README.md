@@ -59,6 +59,6 @@ See [LICENSE-APACHE](LICENSE-APACHE.md) and [LICENSE-MIT](LICENSE-MIT.md) for de
 
 ## Acknowledgments
 
-* [i3lock](https://github.com/i3/i3lock) by [Michael Stapelberg](https://github.com/stapelberg) and [contributors](https://github.com/i3/i3lock/graphs/contributors)
+* [i3lock](https://github.com/i3/i3lock) by [Michael Stapelberg](https://github.com/stapelberg) and [contributors](https://github.com/i3/i3lock/graphs/contributors).
 * [i3lock-fancy](https://github.com/meskarune/i3lock-fancy) by [Dolores Portalatin](https://github.com/meskarune) for inspiration.
 * [Martin Dørum](https://github.com/mortie) for contributions to `i3lock` that made this possible.
