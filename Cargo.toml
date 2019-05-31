@@ -14,6 +14,11 @@ edition = "2018"
 libc = "0.2" # should be same as xcb
 num_cpus = "1"
 
+[dependencies.imagefmt]
+version = "4"
+default-features = false
+optional = true
+
 [dependencies.structopt]
 version = "0.2"
 default-features = false
@@ -28,7 +33,9 @@ cc = "1"
 [features]
 suggestions = ["structopt/suggestions"]
 color = ["structopt/color"]
-default = ["suggestions", "color"]
+png = ["imagefmt/png"]
+jpeg = ["imagefmt/jpeg"]
+default = ["suggestions", "color", "png", "jpeg"]
 
 [profile.release]
 lto = true

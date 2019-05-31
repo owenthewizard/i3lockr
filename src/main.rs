@@ -4,6 +4,8 @@ use std::panic;
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
+use imagefmt::ColFmt;
+
 use structopt::clap::Format;
 use structopt::StructOpt;
 
@@ -38,18 +40,73 @@ fn main() {
     timer_time!("Capturing screenshot", screenshot);
     debug!("Found monitors: {:?}", shot.monitors());
 
-    if args.radius.is_some() {
+    if let Some(r) = args.radius {
         timer_start!(blur);
         ffi::blur(
             shot.data,
             shot.width() as libc::c_int,
             shot.height() as libc::c_int,
-            args.radius.unwrap_or_else(|| unreachable!()) as libc::c_int, // should be safe because validators ran already
+            r as libc::c_int,
         );
         timer_time!("Blurring", blur);
     }
 
-    //TODO overlay + invert
+    //TODO invert
+    if let Some(path) = args.path {
+        timer_start!(decode);
+        let image = imagefmt::read(path, ColFmt::BGRA)
+            .unwrap_or_else(|e| color_panic!("Failed to read image: {}", e));
+        timer_time!("Decoding image", decode);
+        let (mut x_off, mut y_off) = match args.pos {
+            cli::Position::Center => (
+                (shot.width() as usize / 2 - image.w / 2) as isize, // isize because Coords below are isize and match blocks must be homogeneous
+                (shot.height() as usize / 2 - image.h / 2) as isize,
+            ),
+            cli::Position::Coords(x, y) => (x, y),
+        };
+        while x_off.is_negative() {
+            x_off += shot.width() as isize;
+        }
+        while y_off.is_negative() {
+            y_off += shot.height() as isize;
+        }
+        while x_off >= shot.width() as isize {
+            x_off -= shot.width() as isize;
+        }
+        while y_off >= shot.height() as isize {
+            y_off -= shot.height() as isize;
+        }
+        let (x_off, y_off) = (x_off as usize, y_off as usize);
+        debug!("Calculated image position: ({},{})", x_off, y_off);
+
+        // should be able to rewrite this to write rows at once
+        timer_start!(overlay);
+        for x in 0..image.w {
+            for y in 0..image.h {
+                let i_dst = (x + x_off + shot.width() as usize * (y + y_off)) * 4;
+                let i_src = (x + image.w * y) * 4;
+                let src = &image.buf[i_src..i_src + 4];
+                let dst = shot.data.get_mut(i_dst..i_dst + 4);
+
+                if let Some(sl) = dst {
+                    if args.invert {
+                        unimplemented!("invert");
+                    } else {
+                        match src[3] {
+                            // alpha byte
+                            0 => continue,                   // skip transparent pixels
+                            255 => sl.copy_from_slice(&src), // opaque pixels are a dumb copy
+                            _ => {
+                                // anything else need alpha blending
+                                unimplemented!("alpha blending");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        timer_time!("Overlaying/inverting image", overlay);
+    }
 
     //TODO draw text
 
