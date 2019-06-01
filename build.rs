@@ -3,6 +3,9 @@ use std::path::Path;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+include!("src/cli/mod.rs");
+use structopt::clap::Shell;
+
 fn main() {
     // Build C code for stackblur and statically link
     let c_src = Path::new("src").join("C");
@@ -48,5 +51,10 @@ fn main() {
             .unwrap()
             .as_secs()
     );
-    //
+
+    // shell completions
+    Cli::clap().gen_completions(env!("CARGO_PKG_NAME"), Shell::Bash, "target");
+    Cli::clap().gen_completions(env!("CARGO_PKG_NAME"), Shell::Fish, "target");
+    Cli::clap().gen_completions(env!("CARGO_PKG_NAME"), Shell::Zsh, "target");
+    Cli::clap().gen_completions(env!("CARGO_PKG_NAME"), Shell::Elvish, "target");
 }
