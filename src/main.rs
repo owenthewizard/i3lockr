@@ -33,7 +33,7 @@ fn main() {
         return;
     }
     unsafe { DEBUG = args.debug };
-    debug!("Found args: {:?}", args);
+    debug!("Found args: {:#?}", args);
 
     // take the screenshot
     timer_start!(screenshot);
