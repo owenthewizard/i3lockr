@@ -1,7 +1,5 @@
 use std::ffi::OsString;
-use std::num::ParseIntError;
 use std::path::PathBuf;
-use std::str::FromStr;
 
 use structopt::StructOpt;
 
@@ -13,28 +11,30 @@ mod validators;
 #[derive(StructOpt, Debug)]
 pub struct Cli {
     /// Prints version information
-    #[structopt(short = "V", long = "version")]
+    #[structopt(short = "V", long = "version", alias = "vers")]
     pub version: bool,
 
     /// Print how long each step takes, among other things.
     /// Always enabled in debug builds.
-    #[structopt(short = "v", long = "verbose")]
+    #[structopt(short = "v", long = "verbose", alias = "verb")]
     pub debug: bool,
 
     /// Blur strength. Example: 10
     #[structopt(
         short = "b",
         long = "blur",
-        raw(validator = "validators::greater_than(0)")
+        raw(validator = "validators::greater_than(0)"),
+        alias = "rad"
     )]
     pub radius: Option<u8>,
 
-    /// Don't overlay an icon on these monitors. Example: 0 2
+    /// Don't overlay an icon on these monitors. Must be comma separated.
+    /// Example: 0,2
     #[structopt(
         long = "ignore-monitors",
-        value_name = "0 1 2",
-        takes_value = true,
-        multiple = true
+        value_name = "0,2",
+        require_delimiter = true,
+        visible_alias = "ignore"
     )]
     pub ignore: Vec<usize>,
 
@@ -43,18 +43,19 @@ pub struct Cli {
     #[structopt(long = "invert")]
     pub invert: bool,
 
-    /// Icon placement, "center" to center,
-    /// "x, y" (from top-left), or "-x,-y" (from bottom-right).
-    /// Has no effect without --icon.
-    /// Example: "(945, -20)"
+    /// Icon placement, "x,y" (from top-left), or "-x,-y" (from bottom-right).
+    /// Has no effect without --icon. Must be comma separated. Defaults to center if not specified.
+    /// Example: "945,-20"
     #[structopt(
         short = "u",
         long = "position",
         allow_hyphen_values = true,
-        value_name = "coords|center",
-        default_value = "Center"
+        value_name = "945,-20",
+        number_of_values = 2,
+        require_delimiter = true,
+        visible_alias = "pos"
     )]
-    pub pos: Position,
+    pub pos: Vec<isize>,
 
     /// Path to icon to overlay on screenshot.
     #[structopt(
@@ -65,48 +66,13 @@ pub struct Cli {
     )]
     pub path: Option<PathBuf>,
 
-    /// Arguments to pass to i3lock. Example: "-- --nofork --ignore-empty-password"
+    /// Arguments to pass to i3lock. Example: "--nofork --ignore-empty-password"
     #[structopt(
         value_name = "i3lock",
         takes_value = true,
         multiple = true,
-        parse(from_os_str)
+        parse(from_os_str),
+        last = true
     )]
     pub i3lock: Vec<OsString>,
-}
-
-#[derive(Debug)]
-pub enum Position {
-    Center,
-    Coords(isize, isize),
-}
-
-impl FromStr for Position {
-    type Err = ParseIntError;
-
-    // if you can improve this submit a PR
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.eq_ignore_ascii_case("center") {
-            return Ok(Position::Center);
-        }
-        let mut coords = s
-            .trim_matches(|p| p == '(' || p == ')')
-            .split(',')
-            .map(str::trim);
-
-        // TODO replace expect with IntErrorKind::Empty once it's stable
-        let x = coords
-            .next()
-            .expect("--position takes exactly two integers")
-            .parse::<isize>()?;
-        let y = coords
-            .next()
-            .expect("--position takes exactly two integers")
-            .parse::<isize>()?;
-        assert!(
-            coords.next().is_none(),
-            "--position takes exactly two integers"
-        );
-        Ok(Position::Coords(x, y))
-    }
 }

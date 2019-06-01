@@ -72,12 +72,18 @@ fn main() {
                 continue;
             }
 
-            let (mut x_off, mut y_off) = match args.pos {
-                cli::Position::Center => (
-                    (w / 2 - image.w / 2) as isize, // isize because Coords below are isize and match blocks must be homogeneous
-                    (h / 2 - image.h / 2) as isize,
-                ),
-                cli::Position::Coords(x, y) => (x, y),
+            if image.w > w || image.h > h {
+                eprintln!("{}", Format::Warning("Your image is larger than your monitor, image positions may be off!"));
+            }
+
+            let (mut x_off, mut y_off) = if args.pos.is_empty() {
+                (
+                    ((w / 2).saturating_sub(image.w / 2)) as isize,
+                    ((h / 2).saturating_sub(image.h / 2)) as isize,
+                )
+            } else {
+                let mut v = args.pos.iter();
+                (*v.next().unwrap(), *v.next().unwrap()) // exactly two items validated by clap/structopt
             };
 
             while x_off.is_negative() {
