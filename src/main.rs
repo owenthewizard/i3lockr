@@ -66,7 +66,8 @@ fn main() {
         for (i, (w, h)) in shot
             .monitors
             .iter()
-            .map(|(a, b)| (*a as usize, *b as usize))
+            .cloned()
+            .map(|(a, b)| (a as usize, b as usize))
             .enumerate()
         {
             if args.ignore.contains(&i) {
