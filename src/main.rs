@@ -6,6 +6,8 @@ use std::time::Instant;
 
 use imagefmt::ColFmt;
 
+use itertools::{iproduct, Itertools};
+
 use structopt::clap::Format;
 use structopt::StructOpt;
 
@@ -73,7 +75,12 @@ fn main() {
             }
 
             if image.w > w || image.h > h {
-                eprintln!("{}", Format::Warning("Your image is larger than your monitor, image positions may be off!"));
+                eprintln!(
+                    "{}",
+                    Format::Warning(
+                        "Your image is larger than your monitor, image positions may be off!"
+                    )
+                );
             }
 
             let (mut x_off, mut y_off) = if args.pos.is_empty() {
@@ -82,8 +89,7 @@ fn main() {
                     ((h / 2).saturating_sub(image.h / 2)) as isize,
                 )
             } else {
-                let mut v = args.pos.iter();
-                (*v.next().unwrap(), *v.next().unwrap()) // exactly two items validated by clap/structopt
+                args.pos.iter().cloned().collect_tuple().unwrap() // exactly two items validated by clap/structopt
             };
 
             while x_off.is_negative() {
@@ -107,41 +113,40 @@ fn main() {
 
             // should be able to rewrite this to write rows at once
             timer_start!(overlay);
-            for x in 0..image.w {
-                for y in 0..image.h {
-                    let i_dst = (x + x_off + w * (y + y_off)) * 4;
-                    let i_src = (x + image.w * y) * 4;
-                    let src = unsafe { image.buf.get_unchecked(i_src..i_src + 4) };
-                    let dst = shot.data.get_mut(i_dst..i_dst + 4);
+            for (x, y) in iproduct!(0..image.w, 0..image.h) {
+                let i_dst = (x + x_off + w * (y + y_off)) * 4;
+                let i_src = (x + image.w * y) * 4;
+                let src = unsafe { image.buf.get_unchecked(i_src..i_src + 4) };
+                let dst = shot.data.get_mut(i_dst..i_dst + 4);
 
-                    if let Some(sl) = dst {
-                        if args.invert {
-                            match unsafe { src.get_unchecked(3) } {
-                                0 => continue,
-                                _ => unsafe {
-                                    sl.get_unchecked_mut(0..4).iter_mut().for_each(|p| *p = !*p)
-                                },
-                            }
-                        } else {
-                            match unsafe { src.get_unchecked(3) } {
-                                // alpha byte
-                                0 => continue, // skip transparent pixels
-                                255 => sl.copy_from_slice(src), // opaque pixels are a dumb copy
-                                _ => {
-                                    // anything else need alpha blending
-                                    unsafe {
-                                        let a = *src.get_unchecked(3) as usize + 1;
-                                        let inv_a = 256 - *src.get_unchecked(3) as usize;
-                                        sl.get_unchecked_mut(0..4)
-                                            .iter_mut()
-                                            .zip(src.get_unchecked(0..4).iter())
-                                            .for_each(|(dst_p, src_p)| {
-                                                *dst_p = ((a * *dst_p as usize
-                                                    + inv_a * *src_p as usize)
-                                                    >> 8)
-                                                    as u8
-                                            });
-                                    }
+                if let Some(sl) = dst {
+                    if args.invert {
+                        // check alpha byte
+                        match unsafe { src.get_unchecked(3) } {
+                            0 => continue, // skip inverting invisible pixels
+                            _ => unsafe {
+                                sl.get_unchecked_mut(0..4).iter_mut().for_each(|p| *p = !*p)
+                            },
+                        }
+                    } else {
+                        // check alpha byte
+                        match unsafe { src.get_unchecked(3) } {
+                            0 => continue,                  // skip invisible pixels
+                            255 => sl.copy_from_slice(src), // opaque pixels are a dumb copy
+                            _ => {
+                                // anything else needs alpha blending
+                                unsafe {
+                                    let a = *src.get_unchecked(3) as usize + 1;
+                                    let inv_a = 256 - *src.get_unchecked(3) as usize;
+                                    sl.get_unchecked_mut(0..4)
+                                        .iter_mut()
+                                        .zip(src.get_unchecked(0..4).iter())
+                                        .for_each(|(dst_p, src_p)| {
+                                            *dst_p = ((a * *dst_p as usize
+                                                + inv_a * *src_p as usize)
+                                                >> 8)
+                                                as u8
+                                        });
                                 }
                             }
                         }
