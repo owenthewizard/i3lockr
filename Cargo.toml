@@ -10,6 +10,13 @@ keywords = ["i3lockr", "i3lock", "i3lock-fancy", "blur", "i3lock-color" ]
 categories = ["command-line-utilities", "multimedia::images"]
 edition = "2018"
 
+[badges]
+is-it-maintained-issue-resolution = { repository = "owenthewizard/i3lockr" }
+is-it-maintained-open-issues = { repository = "owenthewizard/i3lockr" }
+
+maintenance = { status = "actively-developed" }
+
+
 [dependencies]
 itertools = "0.8"
 libc = "0.2" # should be same as xcb
