@@ -58,6 +58,7 @@ impl<'a> Screenshot<'a> {
 
         // grab their widths and heights
         // this silently throws away errors...
+        #[allow(clippy::filter_map)]
         let monitors = reply
             .crtcs()
             .iter()
@@ -66,10 +67,8 @@ impl<'a> Screenshot<'a> {
                     .get_reply()
                     .ok()
             })
-            .filter_map(|x| match x.mode() {
-                0 => None,
-                _ => Some((x.width(), x.height())),
-            })
+            .filter(|x| x.mode() != 0)
+            .map(|x| (x.width(), x.height()))
             .collect();
 
         // real work done here
