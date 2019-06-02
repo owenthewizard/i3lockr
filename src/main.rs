@@ -67,7 +67,7 @@ fn main() {
             .monitors
             .iter()
             .cloned()
-            .map(|(a, b)| (a as usize, b as usize))
+            .map(|(a, b)| (a as usize, b as usize)) // map_into doesn't work with tuples
             .enumerate()
         {
             if args.ignore.contains(&i) {
@@ -117,39 +117,34 @@ fn main() {
             for (x, y) in iproduct!(0..image.w, 0..image.h) {
                 let i_dst = (x + x_off + w * (y + y_off)) * 4;
                 let i_src = (x + image.w * y) * 4;
-                let src = unsafe { image.buf.get_unchecked(i_src..i_src + 4) };
-                let dst = shot.data.get_mut(i_dst..i_dst + 4);
 
-                if let Some(sl) = dst {
+                let src_bgra = unsafe { image.buf.get_unchecked(i_src..i_src + 4) };
+                let (src_bgr, src_a) = src_bgra.split_at(3);
+                let src_a = unsafe { src_a.get_unchecked(0) };
+
+                // skip invisible pixels
+                if *src_a == 0 {
+                    continue;
+                }
+
+                // dst_a not used
+                if let Some(dst_bgr) = shot.data.get_mut(i_dst..i_dst + 3) {
                     if args.invert {
-                        // check alpha byte
-                        match unsafe { src.get_unchecked(3) } {
-                            0 => continue, // skip inverting invisible pixels
-                            _ => unsafe {
-                                sl.get_unchecked_mut(0..4).iter_mut().for_each(|p| *p = !*p)
-                            },
-                        }
+                        dst_bgr.iter_mut().for_each(|c| *c = !*c)
                     } else {
-                        // check alpha byte
-                        match unsafe { src.get_unchecked(3) } {
-                            0 => continue,                  // skip invisible pixels
-                            255 => sl.copy_from_slice(src), // opaque pixels are a dumb copy
-                            _ => {
-                                // anything else needs alpha blending
-                                unsafe {
-                                    let a = *src.get_unchecked(3) as usize + 1;
-                                    let inv_a = 256 - *src.get_unchecked(3) as usize;
-                                    sl.get_unchecked_mut(0..4)
-                                        .iter_mut()
-                                        .zip(src.get_unchecked(0..4).iter())
-                                        .for_each(|(dst_p, src_p)| {
-                                            *dst_p = ((a * *dst_p as usize
-                                                + inv_a * *src_p as usize)
-                                                >> 8)
-                                                as u8
-                                        });
-                                }
-                            }
+                        if *src_a == 255 {
+                            dst_bgr.copy_from_slice(src_bgr) // opaque pixels are a dumb copy
+                        } else {
+                            // anything else needs alpha blending
+                            let a = *src_a as usize + 1;
+                            let inv_a = 257 - a;
+                            dst_bgr
+                                .iter_mut()
+                                .zip(src_bgr.iter())
+                                .for_each(|(dst_c, &src_c)| {
+                                    *dst_c =
+                                        ((a * *dst_c as usize + inv_a * src_c as usize) >> 8) as u8
+                                });
                         }
                     }
                 }
