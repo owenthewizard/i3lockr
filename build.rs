@@ -1,23 +1,60 @@
+use std::env;
+use std::path::Path;
 use std::process::Command;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+include!("src/cli/mod.rs");
+use structopt::clap::Shell;
 
 fn main() {
-    println!("cargo:rustc-env=GIT_BRANCH=unknown-branch");
-    println!("cargo:rustc-env=GIT_HASH=unknown-commit");
-    if let Ok(output) = Command::new("git")
-        .args(&["rev-parse", "--abbrev-ref", "HEAD"])
+    // Build C code for stackblur and statically link
+    let c_src = Path::new("src").join("C");
+    cc::Build::new()
+        .file(c_src.join("stackblur.c"))
+        .include(c_src)
+        .compile("stackblur");
+    //
+
+    // Export build target, build time, and git commit
+    println!(
+        "cargo:rustc-env=TARGET={}",
+        env::var("TARGET").unwrap_or("Unknown Target".to_owned())
+    );
+
+    let mut git_branch = "Unknown Branch".to_owned();
+    let mut git_commit = "Unknown Commit".to_owned();
+
+    if let Ok(out) = Command::new("git")
+        .args(vec!["rev-parse", "--abbrev-ref", "HEAD"])
         .output()
     {
-        if output.status.success() {
-            let git_branch = String::from_utf8(output.stdout).unwrap();
-            println!("cargo:rustc-env=GIT_BRANCH={}", git_branch);
-        }
-    }
-    if let Ok(output) = Command::new("git").args(&["rev-parse", "HEAD"]).output() {
-        if output.status.success() {
-            let git_hash = String::from_utf8(output.stdout).unwrap();
-            println!("cargo:rustc-env=GIT_HASH={}", git_hash.get(0..7).unwrap());
+        if !out.stdout.is_empty() {
+            git_branch = String::from_utf8(out.stdout).unwrap_or("Unknown Branch".to_owned());
         }
     }
 
-    // TODO: clap gen shell completion & manpages
+    if let Ok(out) = Command::new("git")
+        .args(vec!["rev-parse", "--short", "HEAD"])
+        .output()
+    {
+        if !out.stdout.is_empty() {
+            git_commit = String::from_utf8(out.stdout).unwrap_or("Unknown Commit".to_owned());
+        }
+    }
+
+    println!("cargo:rustc-env=GIT_BRANCH={}", git_branch);
+    println!("cargo:rustc-env=GIT_COMMIT={}", git_commit);
+    println!(
+        "cargo:rustc-env=TIME={}",
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+    );
+
+    // shell completions
+    Cli::clap().gen_completions(env!("CARGO_PKG_NAME"), Shell::Bash, "target");
+    Cli::clap().gen_completions(env!("CARGO_PKG_NAME"), Shell::Fish, "target");
+    Cli::clap().gen_completions(env!("CARGO_PKG_NAME"), Shell::Zsh, "target");
+    Cli::clap().gen_completions(env!("CARGO_PKG_NAME"), Shell::Elvish, "target");
 }
