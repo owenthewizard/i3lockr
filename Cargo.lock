@@ -70,7 +70,7 @@ dependencies = [
 
 [[package]]
 name = "i3lockr"
-version = "1.0.0"
+version = "1.0.0-final"
 dependencies = [
  "cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
  "imagefmt 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
