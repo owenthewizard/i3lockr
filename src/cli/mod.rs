@@ -34,13 +34,14 @@ pub struct Cli {
         long = "ignore-monitors",
         value_name = "0,2",
         require_delimiter = true,
+        raw(validator = "validators::has_compose"),
         visible_alias = "ignore"
     )]
     pub ignore: Vec<usize>,
 
     /// Interpret the icon as a mask, inverting masked pixels
     /// on the screenshot. Try it to see an example.
-    #[structopt(long = "invert")]
+    #[structopt(long = "invert", raw(validator = "validators::has_compose"))]
     pub invert: bool,
 
     /// Icon placement, "x,y" (from top-left), or "-x,-y" (from bottom-right).
@@ -53,6 +54,7 @@ pub struct Cli {
         value_name = "945,-20",
         number_of_values = 2,
         require_delimiter = true,
+        raw(validator = "validators::has_compose"),
         visible_alias = "pos"
     )]
     pub pos: Vec<isize>,
@@ -62,7 +64,8 @@ pub struct Cli {
         short = "i",
         long = "icon",
         value_name = "file.png",
-        parse(from_os_str)
+        parse(from_os_str),
+        raw(validator = "validators::has_compose")
     )]
     pub path: Option<PathBuf>,
 

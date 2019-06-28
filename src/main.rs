@@ -4,8 +4,10 @@ use std::panic;
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
+#[cfg(any(feature = "png", feature = "jpeg"))]
 use imagefmt::ColFmt;
 
+#[cfg(any(feature = "png", feature = "jpeg"))]
 use itertools::{iproduct, Itertools};
 
 use structopt::clap::Format;
@@ -57,99 +59,102 @@ fn main() {
     }
 
     // overlay/invert on each monitor
-    if let Some(path) = args.path {
-        timer_start!(decode);
-        let image = imagefmt::read(path, ColFmt::BGRA)
-            .unwrap_or_else(|e| color_panic!("Failed to read image: {}", e));
-        timer_time!("Decoding image", decode);
+    #[cfg(any(feature = "png", feature = "jpeg"))]
+    {
+        if let Some(path) = args.path {
+            timer_start!(decode);
+            let image = imagefmt::read(path, ColFmt::BGRA)
+                .unwrap_or_else(|e| color_panic!("Failed to read image: {}", e));
+            timer_time!("Decoding image", decode);
 
-        for (i, (w, h)) in shot
-            .monitors
-            .iter()
-            .cloned()
-            .map(|(a, b)| (a as usize, b as usize)) // map_into doesn't work with tuples
-            .enumerate()
-        {
-            if args.ignore.contains(&i) {
-                debug!("Ignoring monitor {}", i);
-                continue;
-            }
-
-            if image.w > w || image.h > h {
-                eprintln!(
-                    "{}",
-                    Format::Warning(
-                        "Your image is larger than your monitor, image positions may be off!"
-                    )
-                );
-            }
-
-            let (mut x_off, mut y_off) = if args.pos.is_empty() {
-                (
-                    ((w / 2).saturating_sub(image.w / 2)) as isize,
-                    ((h / 2).saturating_sub(image.h / 2)) as isize,
-                )
-            } else {
-                args.pos.iter().cloned().collect_tuple().unwrap() // exactly two items validated by clap/structopt
-            };
-
-            while x_off.is_negative() {
-                x_off += w as isize;
-            }
-            while y_off.is_negative() {
-                y_off += h as isize;
-            }
-            while x_off >= shot.width() as isize {
-                x_off -= w as isize;
-            }
-            while y_off >= shot.height() as isize {
-                y_off -= h as isize;
-            }
-
-            let (x_off, y_off) = (x_off as usize, y_off as usize);
-            debug!(
-                "Calculated image position on monitor {}: ({},{})",
-                i, x_off, y_off
-            );
-
-            // should be able to rewrite this to write rows at once
-            timer_start!(overlay);
-            for (x, y) in iproduct!(0..image.w, 0..image.h) {
-                let i_dst = (x + x_off + w * (y + y_off)) * 4;
-                let i_src = (x + image.w * y) * 4;
-
-                let src_bgra = unsafe { image.buf.get_unchecked(i_src..i_src + 4) };
-                let (src_bgr, src_a) = src_bgra.split_at(3);
-                let src_a = unsafe { src_a.get_unchecked(0) };
-
-                // skip invisible pixels
-                if *src_a == 0 {
+            for (i, (w, h)) in shot
+                .monitors
+                .iter()
+                .cloned()
+                .map(|(a, b)| (a as usize, b as usize)) // map_into doesn't work with tuples
+                .enumerate()
+            {
+                if args.ignore.contains(&i) {
+                    debug!("Ignoring monitor {}", i);
                     continue;
                 }
 
-                // dst_a not used
-                if let Some(dst_bgr) = shot.data.get_mut(i_dst..i_dst + 3) {
-                    if args.invert {
-                        dst_bgr.iter_mut().for_each(|c| *c = !*c)
-                    } else {
-                        if *src_a == 255 {
-                            dst_bgr.copy_from_slice(src_bgr) // opaque pixels are a dumb copy
+                if image.w > w || image.h > h {
+                    eprintln!(
+                        "{}",
+                        Format::Warning(
+                            "Your image is larger than your monitor, image positions may be off!"
+                        )
+                    );
+                }
+
+                let (mut x_off, mut y_off) = if args.pos.is_empty() {
+                    (
+                        ((w / 2).saturating_sub(image.w / 2)) as isize,
+                        ((h / 2).saturating_sub(image.h / 2)) as isize,
+                    )
+                } else {
+                    args.pos.iter().cloned().collect_tuple().unwrap() // exactly two items validated by clap/structopt
+                };
+
+                while x_off.is_negative() {
+                    x_off += w as isize;
+                }
+                while y_off.is_negative() {
+                    y_off += h as isize;
+                }
+                while x_off >= shot.width() as isize {
+                    x_off -= w as isize;
+                }
+                while y_off >= shot.height() as isize {
+                    y_off -= h as isize;
+                }
+
+                let (x_off, y_off) = (x_off as usize, y_off as usize);
+                debug!(
+                    "Calculated image position on monitor {}: ({},{})",
+                    i, x_off, y_off
+                );
+
+                // should be able to rewrite this to write rows at once
+                timer_start!(overlay);
+                for (x, y) in iproduct!(0..image.w, 0..image.h) {
+                    let i_dst = (x + x_off + w * (y + y_off)) * 4;
+                    let i_src = (x + image.w * y) * 4;
+
+                    let src_bgra = unsafe { image.buf.get_unchecked(i_src..i_src + 4) };
+                    let (src_bgr, src_a) = src_bgra.split_at(3);
+                    let src_a = unsafe { src_a.get_unchecked(0) };
+
+                    // skip invisible pixels
+                    if *src_a == 0 {
+                        continue;
+                    }
+
+                    // dst_a not used
+                    if let Some(dst_bgr) = shot.data.get_mut(i_dst..i_dst + 3) {
+                        if args.invert {
+                            dst_bgr.iter_mut().for_each(|c| *c = !*c)
                         } else {
-                            // anything else needs alpha blending
-                            let a = *src_a as usize + 1;
-                            let inv_a = 257 - a;
-                            dst_bgr
-                                .iter_mut()
-                                .zip(src_bgr.iter())
-                                .for_each(|(dst_c, &src_c)| {
-                                    *dst_c =
-                                        ((a * *dst_c as usize + inv_a * src_c as usize) >> 8) as u8
-                                });
+                            if *src_a == 255 {
+                                dst_bgr.copy_from_slice(src_bgr) // opaque pixels are a dumb copy
+                            } else {
+                                // anything else needs alpha blending
+                                let a = *src_a as usize + 1;
+                                let inv_a = 257 - a;
+                                dst_bgr.iter_mut().zip(src_bgr.iter()).for_each(
+                                    |(dst_c, &src_c)| {
+                                        *dst_c = ((a * *dst_c as usize + inv_a * src_c as usize)
+                                            >> 8)
+                                            as u8
+                                    },
+                                );
+                            }
                         }
                     }
                 }
+                timer_time!("Overlaying/inverting image", overlay);
             }
-            timer_time!("Overlaying/inverting image", overlay);
         }
     }
 

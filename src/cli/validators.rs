@@ -20,6 +20,14 @@ where
     }
 }
 
+pub fn has_compose(_: String) -> Result<(), String> {
+    if cfg!(feature = "png") || cfg!(feature = "jpeg") {
+        Ok(())
+    } else {
+        Err("Must have 'png' or 'jpeg' features enabled to compose images".to_owned())
+    }
+}
+
 /*
 /// Returns a closure that checks if the argument is between two numbers.
 pub fn between<T>(small: T, large: T) -> impl Fn(String) -> Result<(), String>
