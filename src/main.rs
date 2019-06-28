@@ -135,21 +135,19 @@ fn main() {
                     if let Some(dst_bgr) = shot.data.get_mut(i_dst..i_dst + 3) {
                         if args.invert {
                             dst_bgr.iter_mut().for_each(|c| *c = !*c)
+                        } else if *src_a == 255 {
+                            dst_bgr.copy_from_slice(src_bgr) // opaque pixels are a dumb copy
                         } else {
-                            if *src_a == 255 {
-                                dst_bgr.copy_from_slice(src_bgr) // opaque pixels are a dumb copy
-                            } else {
-                                // anything else needs alpha blending
-                                let a = *src_a as usize + 1;
-                                let inv_a = 257 - a;
-                                dst_bgr.iter_mut().zip(src_bgr.iter()).for_each(
-                                    |(dst_c, &src_c)| {
-                                        *dst_c = ((a * *dst_c as usize + inv_a * src_c as usize)
-                                            >> 8)
-                                            as u8
-                                    },
-                                );
-                            }
+                            // anything else needs alpha blending
+                            let a = *src_a as usize + 1;
+                            let inv_a = 257 - a;
+                            dst_bgr
+                                .iter_mut()
+                                .zip(src_bgr.iter())
+                                .for_each(|(dst_c, &src_c)| {
+                                    *dst_c =
+                                        ((a * *dst_c as usize + inv_a * src_c as usize) >> 8) as u8
+                                });
                         }
                     }
                 }
