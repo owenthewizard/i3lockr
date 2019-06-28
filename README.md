@@ -12,7 +12,8 @@ If you're on Arch Linux, you may use `i3lock-git` from the AUR.
 
 ## Quick start [[Documentation]](USAGE.md)
 
-Signed binary releases are availible on the [releases page](https://github.com/owenthewizard/i3lockr/releases).
+Signed binary releases are availible on the [releases page](https://github.com/owenthewizard/i3lockr/releases).  
+Make sure to verify the signature and hashes!
 
 Or build it yourself:
 ```bash
