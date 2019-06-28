@@ -28,6 +28,10 @@ pub struct Cli {
     )]
     pub radius: Option<u8>,
 
+    /// Brightness adjustment (0, ∞). Example: 0.7
+    #[structopt(short = "g", long = "gamma", alias = "gam")]
+    pub gamma: Option<f32>,
+
     /// Don't overlay an icon on these monitors. Must be comma separated.
     /// Example: 0,2
     #[structopt(

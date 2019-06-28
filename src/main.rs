@@ -58,6 +58,29 @@ fn main() {
         timer_time!("Blurring", blur);
     }
 
+    // brightness adjust
+    if let Some(b) = args.gamma {
+        timer_start!(bright);
+        /*
+        shot.data
+            .iter_mut()
+            .enumerate()
+            .filter(|(i, _)| (i + 1) % 4 != 0) // skip alpha
+            .for_each(|(_, c)| *c = (*c as f32 * b) as u8);
+        */
+        unsafe {
+            shot.data
+                .chunks_exact_mut(4)
+                .filter(|p| *p.get_unchecked(3) == 0)
+                .for_each(|p| {
+                    p.get_unchecked_mut(0..3)
+                        .iter_mut()
+                        .for_each(|c| *c = (*c as f32 * b) as u8)
+                });
+        }
+        timer_time!("Brightness adjustment", bright);
+    }
+
     // overlay/invert on each monitor
     #[cfg(any(feature = "png", feature = "jpeg"))]
     {
