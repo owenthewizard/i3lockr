@@ -44,8 +44,11 @@ suggestions = ["structopt/suggestions"]
 color = ["structopt/color"]
 png = ["imagefmt/png"]
 jpeg = ["imagefmt/jpeg"]
-default = ["suggestions", "color", "png", "jpeg"]
+blur = []
+scale = []
+verbose = []
+default = ["suggestions", "color", "png", "jpeg", "blur", "scale"]
 
 [profile.release]
 lto = true
-codegen-units=1
+codegen-units = 1

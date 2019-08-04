@@ -16,8 +16,8 @@ pub struct Cli {
 
     /// Print how long each step takes, among other things.
     /// Always enabled in debug builds.
-    #[structopt(short = "v", long = "verbose", alias = "verb")]
-    pub debug: bool,
+    #[structopt(short = "v", long = "verbose", alias = "verb", alias = "debug")]
+    pub verbose: bool,
 
     /// Blur strength. Example: 10
     #[structopt(
@@ -28,7 +28,15 @@ pub struct Cli {
     )]
     pub radius: Option<u8>,
 
-    /// Don't overlay an icon on these monitors. Must be comma separated.
+    /// Scale factor. Increases blur strength by a factor of this. Example: 2
+    #[structopt(
+        short = "p",
+        long = "scale",
+        raw(validator = "validators::greater_than(0)")
+    )]
+    pub factor: Option<usize>,
+
+    /// Don't overlay an icon on these monitors. Useful if you're mirroring displays. Must be comma separated.
     /// Example: 0,2
     #[structopt(
         long = "ignore-monitors",

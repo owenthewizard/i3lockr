@@ -1,14 +1,3 @@
-pub static mut DEBUG: bool = false;
-
-#[macro_export]
-macro_rules! debug {
-    ($($arg:tt)*) => {
-        if cfg!(debug_assertions) || unsafe {DEBUG} {
-            eprintln!("{f}:{l}:{c} {fmt}", f=file!(), l=line!(), c=column!(), fmt=format!($($arg)*));
-        }
-    }
-}
-
 #[macro_export]
 macro_rules! timer_start {
     ($timer:ident) => {
@@ -28,4 +17,17 @@ macro_rules! color_panic {
     ($($arg:tt)*) => {
         panic!("{}", Format::Error(format!($($arg)*)));
     }
+}
+
+#[macro_export]
+macro_rules! warn_disabled {
+    ($s:expr) => {
+        eprintln!(
+            "{}",
+            Format::Warning(format!(
+                "Feature \"{f}\" was not enabled at compile-time. Skipping {f}",
+                f = $s
+            ))
+        );
+    };
 }

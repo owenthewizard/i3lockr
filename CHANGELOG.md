@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+- 100% Rust blur routine (maybe)
+- More multithreading? (hopefully)
+- Drop `imagefmt` dependency (probably)
+- Switch to `u32` rather than `[u8; 4]` (definitely)
+- Refactoring into more separate compile units (probably)
+- Switch from SysV SHM to Linux SHM (could also use POSIX I suppose...) (definitely)
+
 ## [1.0.0-final] - 2019-06-27
 ### Changed
 - Complete rewrite with fewer dependencies

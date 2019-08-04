@@ -4,24 +4,34 @@ use std::panic;
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
-#[cfg(any(feature = "png", feature = "jpeg"))]
-use imagefmt::ColFmt;
-
-#[cfg(any(feature = "png", feature = "jpeg"))]
-use itertools::{iproduct, Itertools};
-
 use structopt::clap::Format;
 use structopt::StructOpt;
 
+use xcb::Connection;
+
 mod cli;
-use cli::Cli;
-mod ffi;
-mod screenshot;
-use screenshot::Screenshot;
 mod macros;
-use macros::*;
+mod pixels;
+
+use cli::Cli;
+use pixels::Pixels;
+
+#[cfg(feature = "blur")]
+mod ffi;
+
+#[cfg(any(feature = "scale", feature = "png", feature = "jpeg"))]
+mod algorithms;
+
+#[cfg(any(feature = "png", feature = "jpeg"))]
+use imagefmt::ColFmt;
+#[cfg(any(feature = "png", feature = "jpeg"))]
+use xcb::randr;
+
+#[cfg(feature = "scale")]
+use algorithms::Scale;
 
 fn main() {
+    timer_start!(everything);
     // parse args, handle custom `--version`
     let args = Cli::from_args();
     if args.version {
@@ -36,124 +46,132 @@ fn main() {
         );
         return;
     }
-    unsafe { DEBUG = args.debug };
+
+    // init debug macro
+    macro_rules! debug {
+        ($($arg:tt)*) => {
+            if cfg!(debug_assertions) || args.verbose {
+                eprintln!("{f}:{l}:{c} {fmt}", f=file!(), l=line!(), c=column!(), fmt=format!($($arg)*));
+            }
+        }
+    }
+
     debug!("Found args: {:#?}", args);
+
+    let (conn, screen_num) =
+        Connection::connect(None).unwrap_or_else(|e| color_panic!("XCB Connection error: {}", e));
 
     // take the screenshot
     timer_start!(screenshot);
-    let shot =
-        Screenshot::capture().unwrap_or_else(|e| color_panic!("Failed to take screenshot: {}", e));
+    let mut shot = Pixels::capture(&conn, screen_num)
+        .unwrap_or_else(|e| color_panic!("Failed to take screenshot: {}", e));
     timer_time!("Capturing screenshot", screenshot);
-    debug!("Found monitors: {:?}", shot.monitors);
 
-    // blur
+    debug!("Image is at /dev/shm{}", shot.path());
+
+    if let Some(f) = args.factor {
+        #[cfg(feature = "scale")]
+        {
+            timer_start!(downscale);
+            shot.scale_down(f);
+            timer_time!("Downscaling", downscale);
+        }
+        #[cfg(not(feature = "scale"))]
+        warn_disabled!("scale");
+    }
+
     if let Some(r) = args.radius {
-        timer_start!(blur);
-        ffi::blur(
-            shot.data,
-            shot.width() as libc::c_int,
-            shot.height() as libc::c_int,
-            r as libc::c_int,
-        );
-        timer_time!("Blurring", blur);
+        #[cfg(feature = "blur")]
+        {
+            timer_start!(blur);
+            let (w, h) = shot.dimensions();
+            ffi::blur(
+                shot.as_argb_8888_mut(),
+                w as libc::c_int,
+                h as libc::c_int,
+                r as libc::c_int,
+            );
+            timer_time!("Blurring", blur);
+        }
+        #[cfg(not(feature = "blur"))]
+        warn_disabled!("blur");
+    }
+
+    if let Some(f) = args.factor {
+        #[cfg(feature = "scale")]
+        {
+            timer_start!(upscale);
+            shot.scale_up(f);
+            timer_time!("Upscaling", upscale);
+        }
+        #[cfg(not(feature = "scale"))]
+        warn_disabled!("scale");
     }
 
     // overlay/invert on each monitor
-    #[cfg(any(feature = "png", feature = "jpeg"))]
-    {
-        if let Some(path) = args.path {
+    if let Some(ref path) = args.path {
+        #[cfg(any(feature = "png", feature = "jpeg"))]
+        {
             timer_start!(decode);
             let image = imagefmt::read(path, ColFmt::BGRA)
                 .unwrap_or_else(|e| color_panic!("Failed to read image: {}", e));
-            timer_time!("Decoding image", decode);
+            timer_time!("Decoding overlay image", decode);
 
-            for (i, (w, h)) in shot
-                .monitors
+            // get handle on monitors
+            let screen = conn
+                .get_setup()
+                .roots()
+                .nth(screen_num as usize)
+                .unwrap_or_else(|| unreachable!());
+
+            let cookie = randr::get_screen_resources(&conn, screen.root());
+            let reply = cookie
+                .get_reply()
+                .unwrap_or_else(|e| color_panic!("XCB: {}", e));
+
+            for (w, h) in reply
+                .crtcs()
                 .iter()
-                .cloned()
-                .map(|(a, b)| (a as usize, b as usize)) // map_into doesn't work with tuples
+                .filter_map(|x| {
+                    randr::get_crtc_info(&conn, *x, reply.timestamp())
+                        .get_reply()
+                        .ok()
+                })
                 .enumerate()
+                .filter(|(i, x)| x.mode() != 0 && !args.ignore.contains(&i))
+                .map(|(_, x)| (usize::from(x.width()), usize::from(x.height())))
             {
-                if args.ignore.contains(&i) {
-                    debug!("Ignoring monitor {}", i);
-                    continue;
-                }
-
-                if image.w > w || image.h > h {
-                    eprintln!(
-                        "{}",
-                        Format::Warning(
-                            "Your image is larger than your monitor, image positions may be off!"
-                        )
-                    );
-                }
-
-                let (mut x_off, mut y_off) = if args.pos.is_empty() {
-                    (
-                        ((w / 2).saturating_sub(image.w / 2)) as isize,
-                        ((h / 2).saturating_sub(image.h / 2)) as isize,
-                    )
+                let (x_off, y_off) = if args.pos.is_empty() {
+                    if image.w > w || image.h > h {
+                        eprintln!(
+                                "{}",
+                                Format::Warning(
+                                    "Your image is larger than your monitor, image positions may be off!"
+                                    )
+                                );
+                    }
+                    (w / 2 - image.w / 2, h / 2 - image.h / 2)
                 } else {
-                    args.pos.iter().cloned().collect_tuple().unwrap() // exactly two items validated by clap/structopt
+                    unsafe {
+                        (
+                            wrap_to_screen(*args.pos.get_unchecked(0), w),
+                            wrap_to_screen(*args.pos.get_unchecked(1), h),
+                        )
+                    }
                 };
 
-                while x_off.is_negative() {
-                    x_off += w as isize;
-                }
-                while y_off.is_negative() {
-                    y_off += h as isize;
-                }
-                while x_off >= shot.width() as isize {
-                    x_off -= w as isize;
-                }
-                while y_off >= shot.height() as isize {
-                    y_off -= h as isize;
-                }
-
-                let (x_off, y_off) = (x_off as usize, y_off as usize);
                 debug!(
-                    "Calculated image position on monitor {}: ({},{})",
-                    i, x_off, y_off
+                    "Calculated image position on monitor: ({},{})",
+                    x_off, y_off
                 );
 
-                // should be able to rewrite this to write rows at once
                 timer_start!(overlay);
-                for (x, y) in iproduct!(0..image.w, 0..image.h) {
-                    let i_dst = (x + x_off + w * (y + y_off)) * 4;
-                    let i_src = (x + image.w * y) * 4;
-
-                    let src_bgra = unsafe { image.buf.get_unchecked(i_src..i_src + 4) };
-                    let (src_bgr, src_a) = src_bgra.split_at(3);
-                    let src_a = unsafe { src_a.get_unchecked(0) };
-
-                    // skip invisible pixels
-                    if *src_a == 0 {
-                        continue;
-                    }
-
-                    // dst_a not used
-                    if let Some(dst_bgr) = shot.data.get_mut(i_dst..i_dst + 3) {
-                        if args.invert {
-                            dst_bgr.iter_mut().for_each(|c| *c = !*c)
-                        } else if *src_a == 255 {
-                            dst_bgr.copy_from_slice(src_bgr) // opaque pixels are a dumb copy
-                        } else {
-                            // anything else needs alpha blending
-                            let a = *src_a as usize + 1;
-                            let inv_a = 257 - a;
-                            dst_bgr
-                                .iter_mut()
-                                .zip(src_bgr.iter())
-                                .for_each(|(dst_c, &src_c)| {
-                                    *dst_c =
-                                        ((a * *dst_c as usize + inv_a * src_c as usize) >> 8) as u8
-                                });
-                        }
-                    }
-                }
-                timer_time!("Overlaying/inverting image", overlay);
+                algorithms::overlay(&mut shot, &image, x_off, y_off, args.invert);
+                timer_time!("Overlaying image", overlay);
             }
         }
+        #[cfg(not(any(feature = "png", feature = "jpeg")))]
+        warn_disabled!("png/jpeg overlay");
     }
 
     //TODO draw text
@@ -163,12 +181,13 @@ fn main() {
     let nofork = args.i3lock.contains(&OsStr::new("-n").to_os_string())
         || args.i3lock.contains(&OsStr::new("--nofork").to_os_string());
 
+    /*
     debug!("Calling i3lock with args: {:?}", args.i3lock);
     let mut cmd = Command::new("i3lock")
         .args(&[
             "-i",
             "/dev/stdin",
-            &format!("--raw={}x{}:bgrx", shot.width(), shot.height()),
+            &format!("--raw={}x{}:native", shot.width, shot.height),
         ])
         .args(args.i3lock)
         .stdin(Stdio::piped())
@@ -178,11 +197,40 @@ fn main() {
     cmd.stdin
         .as_mut()
         .unwrap_or_else(|| color_panic!("Failed to open i3lock stdin!"))
-        .write_all(shot.data)
+        .write_all(shot.as_argb_8888_mut())
         .unwrap_or_else(|e| color_panic!("Failed to write image to i3lock stdin: {}", e));
+    */
+
+    let mut cmd = Command::new("i3lock")
+        .args(&[
+            "-i",
+            &format!("/dev/shm{}", shot.path()),
+            &format!("--raw={}x{}:native", shot.width, shot.height),
+        ])
+        .args(args.i3lock)
+        .spawn()
+        .unwrap_or_else(|e| color_panic!("Failed to call i3lock: {}", e));
+
+    // need `shot` to stay in scope for a while
 
     if nofork {
         debug!("Asked i3lock not to fork, calling wait()");
         let _ = cmd.wait();
+    }
+    timer_time!("Everything", everything);
+}
+
+// credit: @williewillus#8490
+#[cfg(any(feature = "png", feature = "jpeg"))]
+fn wrap_to_screen(idx: isize, len: usize) -> usize {
+    if idx.is_negative() {
+        let pos = -idx as usize % len;
+        if pos == 0 {
+            0
+        } else {
+            len - pos
+        }
+    } else {
+        idx as usize % len
     }
 }
