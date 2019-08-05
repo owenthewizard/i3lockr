@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::ffi::OsStr;
 use std::io::Write;
 use std::panic;
@@ -30,7 +31,7 @@ use xcb::randr;
 #[cfg(feature = "scale")]
 use algorithms::Scale;
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     timer_start!(everything);
     // parse args, handle custom `--version`
     let args = Cli::from_args();
@@ -44,7 +45,7 @@ fn main() {
             env!("GIT_BRANCH"),
             env!("GIT_COMMIT")
         );
-        return;
+        return Ok(());
     }
 
     // init debug macro
@@ -58,13 +59,11 @@ fn main() {
 
     debug!("Found args: {:#?}", args);
 
-    let (conn, screen_num) =
-        Connection::connect(None).unwrap_or_else(|e| color_panic!("XCB Connection error: {}", e));
+    let (conn, screen_num) = Connection::connect(None)?;
 
     // take the screenshot
     timer_start!(screenshot);
-    let mut shot = Pixels::capture(&conn, screen_num)
-        .unwrap_or_else(|e| color_panic!("Failed to take screenshot: {}", e));
+    let mut shot = Pixels::capture(&conn, screen_num)?;
     timer_time!("Capturing screenshot", screenshot);
 
     debug!("Image is at /dev/shm{}", shot.path());
@@ -113,8 +112,7 @@ fn main() {
         #[cfg(any(feature = "png", feature = "jpeg"))]
         {
             timer_start!(decode);
-            let image = imagefmt::read(path, ColFmt::BGRA)
-                .unwrap_or_else(|e| color_panic!("Failed to read image: {}", e));
+            let image = imagefmt::read(path, ColFmt::BGRA)?;
             timer_time!("Decoding overlay image", decode);
 
             // get handle on monitors
@@ -126,8 +124,7 @@ fn main() {
 
             let cookie = randr::get_screen_resources(&conn, screen.root());
             let reply = cookie
-                .get_reply()
-                .unwrap_or_else(|e| color_panic!("XCB: {}", e));
+                .get_reply()?;
 
             for (w, h) in reply
                 .crtcs()
@@ -208,16 +205,18 @@ fn main() {
             &format!("--raw={}x{}:native", shot.width, shot.height),
         ])
         .args(args.i3lock)
-        .spawn()
-        .unwrap_or_else(|e| color_panic!("Failed to call i3lock: {}", e));
+        .spawn()?;
 
     // need `shot` to stay in scope for a while
-
+    //FIXME
+    std::thread::sleep(std::time::Duration::from_millis(100));
     if nofork {
         debug!("Asked i3lock not to fork, calling wait()");
         let _ = cmd.wait();
     }
     timer_time!("Everything", everything);
+
+    Ok(())
 }
 
 // credit: @williewillus#8490

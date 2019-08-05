@@ -3,10 +3,9 @@ use std::hint::unreachable_unchecked;
 use std::io::Error as IoError;
 use std::{ptr, slice};
 
-use libc::{c_int, c_void, close, ftruncate, mmap, munmap, off_t, shm_open, shm_unlink};
 use libc::{
-    MAP_FAILED, MAP_SHARED_VALIDATE, O_CREAT, O_EXCL, O_RDWR, PROT_READ, PROT_WRITE, S_IRUSR,
-    S_IWUSR,
+    c_int, c_void, close, ftruncate, mmap, munmap, off_t, shm_open, shm_unlink, MAP_FAILED,
+    MAP_SHARED_VALIDATE, O_CREAT, O_EXCL, O_RDWR, PROT_READ, PROT_WRITE, S_IRUSR, S_IWUSR,
 };
 
 use xcb::shm::attach_fd_checked;
@@ -14,9 +13,8 @@ use xcb::shm::detach_checked;
 use xcb::shm::get_image;
 use xcb::Connection;
 
-#[macro_use]
 mod error;
-use error::I3LockrError::{self, *};
+use error::CaptureError::{self, LibcFunc};
 
 #[derive(Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct Pixels {
@@ -29,11 +27,13 @@ pub struct Pixels {
 }
 
 impl Pixels {
-    pub fn capture(conn: &Connection, screen_num: c_int) -> Result<Self, I3LockrError> {
-        let screen = match conn.get_setup().roots().nth(screen_num as usize) {
-            Some(n) => n,
-            None => unreachable!(),
-        };
+    pub fn capture(conn: &Connection, screen_num: c_int) -> Result<Self, CaptureError> {
+        let screen = conn
+            .get_setup()
+            .roots()
+            .nth(screen_num as usize)
+            .unwrap_or_else(|| unreachable!());
+
         let (width, height) = (
             screen.width_in_pixels() as usize,
             screen.height_in_pixels() as usize,
@@ -51,14 +51,15 @@ impl Pixels {
             name = CString::from_vec_unchecked(my_vec);
             fd = shm_open(name.as_ptr(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
             if fd < 0 {
-                return Err(ShmOpen(IoError::last_os_error()));
+                return Err(LibcFunc("shm_open".to_owned(), IoError::last_os_error()));
             }
 
             let err = ftruncate(fd, size as off_t);
             if err != 0 {
+                let err = IoError::last_os_error();
                 let _ = close(fd);
                 let _ = shm_unlink(name.as_ptr());
-                return Err(FTruncate(IoError::last_os_error()));
+                return Err(LibcFunc("ftruncate".to_owned(), err));
             }
 
             addr = mmap(
@@ -70,22 +71,25 @@ impl Pixels {
                 0,
             );
             if addr == MAP_FAILED {
+                let err = IoError::last_os_error();
                 let _ = close(fd);
                 let _ = shm_unlink(name.as_ptr());
-                return Err(MMap(IoError::last_os_error()));
+                return Err(LibcFunc("mmap".to_owned(), err));
             }
         }
 
         // attach X to SHM
-        let cookie = attach_fd_checked(conn, xid, fd, false);
-        handle_reply!(cookie.request_check(), unsafe {
-            let _ = munmap(addr, size);
-            let _ = close(fd);
-            let _ = shm_unlink(name.as_ptr());
-        });
+        if let Err(e) = attach_fd_checked(conn, xid, fd, false).request_check() {
+            unsafe {
+                let _ = munmap(addr, size);
+                let _ = close(fd);
+                let _ = shm_unlink(name.as_ptr());
+                return Err(e.into());
+            }
+        }
 
         // take screenshot
-        let cookie = get_image(
+        if let Err(e) = get_image(
             conn,
             screen.root(),
             0,
@@ -96,22 +100,27 @@ impl Pixels {
             0x02, /* Z_PIXMAP */
             xid,
             0,
-        );
-
-        handle_reply!(cookie.get_reply(), unsafe {
-            let _ = munmap(addr, size);
-            let _ = close(fd);
-            let _ = shm_unlink(name.as_ptr());
-            detach_checked(conn, xid);
-        });
+        )
+        .get_reply()
+        {
+            unsafe {
+                let _ = munmap(addr, size);
+                let _ = close(fd);
+                let _ = shm_unlink(name.as_ptr());
+                xcb::shm::detach(conn, xid);
+                return Err(e.into());
+            }
+        }
 
         // detach
-        let cookie = detach_checked(conn, xid);
-        handle_reply!(cookie.request_check(), unsafe {
-            let _ = munmap(addr, size);
-            let _ = close(fd);
-            let _ = shm_unlink(name.as_ptr());
-        });
+        if let Err(e) = detach_checked(conn, xid).request_check() {
+            unsafe {
+                let _ = munmap(addr, size);
+                let _ = close(fd);
+                let _ = shm_unlink(name.as_ptr());
+                return Err(e.into());
+            }
+        }
 
         Ok(Self {
             width,

@@ -13,13 +13,6 @@ macro_rules! timer_time {
 }
 
 #[macro_export]
-macro_rules! color_panic {
-    ($($arg:tt)*) => {
-        panic!("{}", Format::Error(format!($($arg)*)));
-    }
-}
-
-#[macro_export]
 macro_rules! warn_disabled {
     ($s:expr) => {
         eprintln!(
