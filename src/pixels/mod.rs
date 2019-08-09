@@ -16,7 +16,7 @@ use xcb::Connection;
 mod error;
 use error::CaptureError::{self, LibcFunc};
 
-#[derive(Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct Pixels {
     pub width: usize,
     pub height: usize,
@@ -24,6 +24,13 @@ pub struct Pixels {
     name: CString,
     fd: c_int,
     addr: *mut c_void,
+}
+
+pub enum Channels {
+    A = 3,
+    R = 2,
+    G = 1,
+    B = 0,
 }
 
 impl Pixels {
@@ -132,16 +139,12 @@ impl Pixels {
         })
     }
 
-    pub fn as_argb_8888_mut(&mut self) -> &mut [u8] {
-        unsafe { slice::from_raw_parts_mut(self.addr as *mut u8, self.size) }
+    pub fn as_argb_32_mut(&mut self) -> &mut [u32] {
+        unsafe { slice::from_raw_parts_mut(self.addr as *mut u32, self.size) }
     }
 
-    pub fn as_argb_32_mut(&mut self) -> &mut [u32] {
-        debug_assert!(unsafe {
-            let (head, _, tail) = self.as_argb_8888_mut().align_to_mut::<u32>();
-            head.is_empty() && tail.is_empty()
-        });
-        unsafe { self.as_argb_8888_mut().align_to_mut::<u32>().1 }
+    pub fn as_bgra_8888_mut(&mut self) -> &mut [u8] {
+        unsafe { slice::from_raw_parts_mut(self.addr as *mut u8, self.size) }
     }
 
     pub const fn dimensions(&self) -> (usize, usize) {
@@ -157,6 +160,19 @@ impl Pixels {
             .as_c_str()
             .to_str()
             .unwrap_or_else(|_| unsafe { unreachable_unchecked() })
+    }
+
+    pub fn into_planar(&mut self) {
+        let mut pixel_order = (0..4).cycle();
+        self.as_bgra_8888_mut()
+            .sort_by_cached_key(|_| pixel_order.next());
+    }
+
+    pub fn channel_iter_mut(&mut self, channel: Channels) -> impl Iterator<Item = &mut u8> {
+        self.as_bgra_8888_mut()
+            .iter_mut()
+            .skip(channel as usize)
+            .step_by(4)
     }
 }
 

@@ -37,10 +37,6 @@ With `--blur=25`
 
 `i3lockr` (since v1.0.0) is incredibly fast at all blur levels, try timing it yourself with `time`.
 
-## Important Notes
-
-`i3lockr` always exits with `EXIT_SUCCESS`. This means that commands such as `i3lockr && systemctl suspend` may not lock the screen if there was an error.
-
 ### Coding Style
 
 Obey `rustfmt` and Rust 2018 conventions, as well as `clippy` lints.

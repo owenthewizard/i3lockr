@@ -1,9 +1,12 @@
 use std::error::Error;
 use std::ffi::OsStr;
-use std::io::Write;
+use std::hint::unreachable_unchecked;
+use std::io::{self, Write};
 use std::panic;
-use std::process::{Command, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
 use std::time::Instant;
+
+use std::os::unix::process::ExitStatusExt;
 
 use structopt::clap::Format;
 use structopt::StructOpt;
@@ -85,7 +88,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             timer_start!(blur);
             let (w, h) = shot.dimensions();
             ffi::blur(
-                shot.as_argb_8888_mut(),
+                shot.as_bgra_8888_mut(),
                 w as libc::c_int,
                 h as libc::c_int,
                 r as libc::c_int,
@@ -123,8 +126,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .unwrap_or_else(|| unreachable!());
 
             let cookie = randr::get_screen_resources(&conn, screen.root());
-            let reply = cookie
-                .get_reply()?;
+            let reply = cookie.get_reply()?;
 
             for (w, h) in reply
                 .crtcs()
@@ -178,7 +180,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let nofork = args.i3lock.contains(&OsStr::new("-n").to_os_string())
         || args.i3lock.contains(&OsStr::new("--nofork").to_os_string());
 
-    /*
     debug!("Calling i3lock with args: {:?}", args.i3lock);
     let mut cmd = Command::new("i3lock")
         .args(&[
@@ -188,35 +189,55 @@ fn main() -> Result<(), Box<dyn Error>> {
         ])
         .args(args.i3lock)
         .stdin(Stdio::piped())
-        .spawn()
-        .unwrap_or_else(|e| color_panic!("Failed to call i3lock: {}", e));
+        .spawn()?;
 
     cmd.stdin
         .as_mut()
-        .unwrap_or_else(|| color_panic!("Failed to open i3lock stdin!"))
-        .write_all(shot.as_argb_8888_mut())
-        .unwrap_or_else(|e| color_panic!("Failed to write image to i3lock stdin: {}", e));
+        .expect("Failed to take cmd.stdin.as_mut()")
+        .write_all(shot.as_bgra_8888_mut())?;
+
+    /*
+    timer_start!(blur);
+    blur::box_blur_h(r.as_mut_slice(), 1920, 1080, 10);
+    blur::box_blur_h(g.as_mut_slice(), 1920, 1080, 10);
+    blur::box_blur_h(b.as_mut_slice(), 1920, 1080, 10);
+    blur::box_blur_v(r.as_mut_slice(), 1920, 1080, 10);
+    blur::box_blur_v(g.as_mut_slice(), 1920, 1080, 10);
+    blur::box_blur_v(b.as_mut_slice(), 1920, 1080, 10);
+    timer_time!("Blur", blur);
     */
 
-    let mut cmd = Command::new("i3lock")
-        .args(&[
-            "-i",
-            &format!("/dev/shm{}", shot.path()),
-            &format!("--raw={}x{}:native", shot.width, shot.height),
-        ])
-        .args(args.i3lock)
-        .spawn()?;
-
-    // need `shot` to stay in scope for a while
-    //FIXME
-    std::thread::sleep(std::time::Duration::from_millis(100));
-    if nofork {
-        debug!("Asked i3lock not to fork, calling wait()");
-        let _ = cmd.wait();
-    }
     timer_time!("Everything", everything);
 
-    Ok(())
+    if nofork {
+        debug!("Asked i3lock not to fork, calling wait()");
+        match cmd.wait() {
+            Ok(status) => status_to_result(status),
+            Err(e) => Err(e.into()),
+        }
+    } else {
+        match cmd.try_wait() {
+            Ok(None) => Ok(()),
+            Ok(Some(status)) => status_to_result(status),
+            Err(e) => Err(e.into()),
+        }
+    }
+}
+
+fn status_to_result(status: ExitStatus) -> Result<(), Box<dyn Error>> {
+    if status.success() {
+        Ok(())
+    } else if let Some(code) = status.code() {
+        Err(io::Error::from_raw_os_error(code).into())
+    } else {
+        Err(format!(
+            "Killed by signal: {}",
+            status
+                .signal()
+                .unwrap_or_else(|| unsafe { unreachable_unchecked() })
+        )
+        .into())
+    }
 }
 
 // credit: @williewillus#8490
