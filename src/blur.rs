@@ -1,4 +1,7 @@
-pub fn box_blur_vert(data: &mut [u8], width: usize, height: usize, radius: usize) {
+use crate::pixels::Channels;
+use crate::pixels::Pixels;
+
+fn box_blur_vert(data: &mut [u8], width: usize, height: usize, radius: usize) {
     let iarr = 1.0 / ((radius + radius) as f32 + 1.0);
 
     for i in 0..width {
@@ -31,7 +34,7 @@ pub fn box_blur_vert(data: &mut [u8], width: usize, height: usize, radius: usize
             }
         }
 
-        for j in radius + 1 .. height - radius {
+        for j in radius + 1..height - radius {
             if let (Some(v1), Some(v2)) = (data.get(ri), data.get(li)) {
                 val += isize::from(*v1) - isize::from(*v2);
             }
@@ -44,7 +47,7 @@ pub fn box_blur_vert(data: &mut [u8], width: usize, height: usize, radius: usize
             }
         }
 
-        for j in height - radius .. height {
+        for j in height - radius..height {
             if let Some(v) = data.get(li) {
                 val += lv - isize::from(*v);
             }
@@ -55,6 +58,40 @@ pub fn box_blur_vert(data: &mut [u8], width: usize, height: usize, radius: usize
                 ti += width;
             }
         }
+    }
+}
+
+pub fn blur(image: &mut Pixels, width: usize, height: usize, radius: usize) {
+    let mut buffer: Vec<u8>;
+
+    buffer = image.channel_iter(Channels::Blue).copied().collect();
+    box_blur_vert(buffer.as_mut_slice(), width, height, radius);
+    //box_blur_horz
+    for (dst, src) in image
+        .channel_iter_mut(Channels::Blue)
+        .zip(buffer.into_iter())
+    {
+        *dst = src;
+    }
+
+    buffer = image.channel_iter(Channels::Green).copied().collect();
+    box_blur_vert(buffer.as_mut_slice(), width, height, radius);
+    //box_blur_horz
+    for (dst, src) in image
+        .channel_iter_mut(Channels::Green)
+        .zip(buffer.into_iter())
+    {
+        *dst = src;
+    }
+
+    buffer = image.channel_iter(Channels::Red).copied().collect();
+    box_blur_vert(buffer.as_mut_slice(), width, height, radius);
+    //box_blur_horz
+    for (dst, src) in image
+        .channel_iter_mut(Channels::Red)
+        .zip(buffer.into_iter())
+    {
+        *dst = src;
     }
 }
 

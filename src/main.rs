@@ -13,6 +13,7 @@ use structopt::StructOpt;
 
 use xcb::Connection;
 
+mod blur;
 mod cli;
 mod macros;
 mod pixels;
@@ -174,6 +175,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     //TODO draw text
+    timer_start!(blur);
+    blur::blur(&mut shot, 1920, 1080, 10);
+    timer_time!("Blur", blur);
 
     // call i3lock and pass image bytes
     // this is a bit gross
@@ -194,18 +198,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     cmd.stdin
         .as_mut()
         .expect("Failed to take cmd.stdin.as_mut()")
-        .write_all(shot.as_bgra_8888_mut())?;
-
-    /*
-    timer_start!(blur);
-    blur::box_blur_h(r.as_mut_slice(), 1920, 1080, 10);
-    blur::box_blur_h(g.as_mut_slice(), 1920, 1080, 10);
-    blur::box_blur_h(b.as_mut_slice(), 1920, 1080, 10);
-    blur::box_blur_v(r.as_mut_slice(), 1920, 1080, 10);
-    blur::box_blur_v(g.as_mut_slice(), 1920, 1080, 10);
-    blur::box_blur_v(b.as_mut_slice(), 1920, 1080, 10);
-    timer_time!("Blur", blur);
-    */
+        .write_all(shot.as_bgra_8888())?;
 
     timer_time!("Everything", everything);
 

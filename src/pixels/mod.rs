@@ -27,10 +27,10 @@ pub struct Pixels {
 }
 
 pub enum Channels {
-    A = 3,
-    R = 2,
-    G = 1,
-    B = 0,
+    Blue = 0,
+    Green = 1,
+    Red = 2,
+    Alpha = 3,
 }
 
 impl Pixels {
@@ -143,6 +143,10 @@ impl Pixels {
         unsafe { slice::from_raw_parts_mut(self.addr as *mut u32, self.size) }
     }
 
+    pub fn as_bgra_8888(&self) -> &[u8] {
+        unsafe { slice::from_raw_parts(self.addr as *const u8, self.size) }
+    }
+
     pub fn as_bgra_8888_mut(&mut self) -> &mut [u8] {
         unsafe { slice::from_raw_parts_mut(self.addr as *mut u8, self.size) }
     }
@@ -166,6 +170,10 @@ impl Pixels {
         let mut pixel_order = (0..4).cycle();
         self.as_bgra_8888_mut()
             .sort_by_cached_key(|_| pixel_order.next());
+    }
+
+    pub fn channel_iter(&self, channel: Channels) -> impl Iterator<Item = &u8> {
+        self.as_bgra_8888().iter().skip(channel as usize).step_by(4)
     }
 
     pub fn channel_iter_mut(&mut self, channel: Channels) -> impl Iterator<Item = &mut u8> {
