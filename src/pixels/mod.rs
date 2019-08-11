@@ -16,7 +16,7 @@ use xcb::Connection;
 mod error;
 use error::CaptureError::{self, LibcFunc};
 
-#[derive(Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Debug)]
 pub struct Pixels {
     pub width: usize,
     pub height: usize,
