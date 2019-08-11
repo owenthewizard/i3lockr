@@ -16,7 +16,7 @@ use xcb::Connection;
 mod error;
 use error::CaptureError::{self, LibcFunc};
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct Pixels {
     pub width: usize,
     pub height: usize,
@@ -140,7 +140,7 @@ impl Pixels {
     }
 
     pub fn as_argb_32_mut(&mut self) -> &mut [u32] {
-        unsafe { slice::from_raw_parts_mut(self.addr as *mut u32, self.size) }
+        unsafe { slice::from_raw_parts_mut(self.addr as *mut u32, self.size / 4) }
     }
 
     pub fn as_bgra_8888(&self) -> &[u8] {
