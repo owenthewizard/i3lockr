@@ -176,7 +176,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     //TODO draw text
     timer_start!(blur);
-    blur::blur(&mut shot, 1920, 1080, 10);
+    blur::box_blur(shot.as_argb_32_mut(), 1920, 1080, 10);
     timer_time!("Blur", blur);
 
     // call i3lock and pass image bytes
