@@ -5,9 +5,7 @@ use itertools::iproduct;
 use crate::pixels::Pixels;
 
 #[cfg(any(feature = "png", feature = "jpeg"))]
-use std::slice;
-#[cfg(any(feature = "png", feature = "jpeg"))]
-const RB_MASK: u32 = 0x00ff00ff;
+const RB_MASK: u32 = 0x00_ff_00_ff;
 #[cfg(any(feature = "png", feature = "jpeg"))]
 const AG_MASK: u32 = !RB_MASK;
 #[cfg(any(feature = "png", feature = "jpeg"))]
@@ -65,9 +63,8 @@ pub fn overlay(
     y_off: usize,
     invert: bool,
 ) {
-    let top_buf = unsafe {
-        slice::from_raw_parts(top.buf.as_slice().as_ptr() as *const u32, top.buf.len() / 4)
-    };
+    let top_buf = unsafe { top.buf.as_slice().align_to::<u32>().1 };
+    debug_assert!(top_buf.len() == top.buf.len() / 4);
 
     for (x, y) in iproduct!(0..top.w, 0..top.h) {
         let i_dst = x + x_off + bot.width * (y + y_off);

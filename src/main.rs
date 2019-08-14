@@ -91,7 +91,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 shot.as_bgra_8888_mut(),
                 w as libc::c_int,
                 h as libc::c_int,
-                r as libc::c_int,
+                libc::c_int::from(r),
             );
             timer_time!("Blurring", blur);
         }
@@ -137,7 +137,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .ok()
                 })
                 .enumerate()
-                .filter(|(i, x)| x.mode() != 0 && !args.ignore.contains(&i))
+                .filter(|(i, x)| x.mode() != 0 && !args.ignore.contains(i))
                 .map(|(_, x)| (usize::from(x.width()), usize::from(x.height())))
             {
                 let (x_off, y_off) = if args.pos.is_empty() {
@@ -253,7 +253,7 @@ where
     args.clone().any(|x| x == "--nofork")
         || args
             .filter(|x| !x.starts_with("--"))
-            .any(|x| x.contains("n"))
+            .any(|x| x.contains('n'))
 }
 
 #[cfg(test)]
