@@ -1,5 +1,5 @@
+use std::borrow::Cow;
 use std::error::Error;
-use std::ffi::OsStr;
 use std::hint::unreachable_unchecked;
 use std::io::{self, Write};
 use std::panic;
@@ -13,7 +13,6 @@ use structopt::StructOpt;
 
 use xcb::Connection;
 
-mod blur;
 mod cli;
 mod macros;
 mod pixels;
@@ -175,15 +174,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     //TODO draw text
-    timer_start!(blur);
-    blur::box_blur(shot.as_argb_32_mut(), 1920, 1080, 10);
-    timer_time!("Blur", blur);
 
-    // call i3lock and pass image bytes
-    // this is a bit gross
-    let nofork = args.i3lock.contains(&OsStr::new("-n").to_os_string())
-        || args.i3lock.contains(&OsStr::new("--nofork").to_os_string());
+    // check if we're forking
+    timer_start!(fork);
+    let nofork = forking(args.i3lock.iter().map(|x| x.as_os_str().to_string_lossy()));
+    timer_time!("Checking for nofork", fork);
 
+    // call i3lock
     debug!("Calling i3lock with args: {:?}", args.i3lock);
     let mut cmd = Command::new("i3lock")
         .args(&[
@@ -195,6 +192,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .stdin(Stdio::piped())
         .spawn()?;
 
+    // pass image bytes
     cmd.stdin
         .as_mut()
         .expect("Failed to take cmd.stdin.as_mut()")
@@ -245,5 +243,63 @@ fn wrap_to_screen(idx: isize, len: usize) -> usize {
         }
     } else {
         idx as usize % len
+    }
+}
+
+fn forking<'a, I>(args: I) -> bool
+where
+    I: Iterator<Item = Cow<'a, str>> + Clone,
+{
+    args.clone().any(|x| x == "--nofork")
+        || args
+            .filter(|x| !x.starts_with("--"))
+            .any(|x| x.contains("n"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nofork() {
+        assert!(forking(
+            [
+                "-n",
+                "--insidecolor=542095ff",
+                "--ringcolor=ffffffff",
+                "--line-uses-inside"
+            ]
+            .iter()
+            .map(|x| Cow::Borrowed(*x))
+        ));
+        assert!(!forking(
+            [
+                "--insidecolor=542095ff",
+                "--ringcolor=ffffffff",
+                "--line-uses-inside"
+            ]
+            .iter()
+            .map(|x| Cow::Borrowed(*x))
+        ));
+        assert!(forking(
+            [
+                "--insidecolor=542095ff",
+                "--ringcolor=ffffffff",
+                "-en",
+                "--line-uses-inside"
+            ]
+            .iter()
+            .map(|x| Cow::Borrowed(*x))
+        ));
+        assert!(!forking(
+            [
+                "--ringcolor=ffffffff",
+                "-e",
+                "--insidecolor=542095ff",
+                "--line-uses-inside"
+            ]
+            .iter()
+            .map(|x| Cow::Borrowed(*x))
+        ));
     }
 }
