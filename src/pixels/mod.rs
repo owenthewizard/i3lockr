@@ -26,13 +26,6 @@ pub struct Pixels {
     addr: *mut c_void,
 }
 
-pub enum Channels {
-    Blue = 0,
-    Green = 1,
-    Red = 2,
-    Alpha = 3,
-}
-
 impl Pixels {
     pub fn capture(conn: &Connection, screen_num: c_int) -> Result<Self, CaptureError> {
         let screen = conn
@@ -155,32 +148,11 @@ impl Pixels {
         (self.width, self.height)
     }
 
-    pub const fn size(&self) -> usize {
-        self.size
-    }
-
     pub fn path(&self) -> &str {
         self.name
             .as_c_str()
             .to_str()
             .unwrap_or_else(|_| unsafe { unreachable_unchecked() })
-    }
-
-    pub fn into_planar(&mut self) {
-        let mut pixel_order = (0..4).cycle();
-        self.as_bgra_8888_mut()
-            .sort_by_cached_key(|_| pixel_order.next());
-    }
-
-    pub fn channel_iter(&self, channel: Channels) -> impl Iterator<Item = &u8> {
-        self.as_bgra_8888().iter().skip(channel as usize).step_by(4)
-    }
-
-    pub fn channel_iter_mut(&mut self, channel: Channels) -> impl Iterator<Item = &mut u8> {
-        self.as_bgra_8888_mut()
-            .iter_mut()
-            .skip(channel as usize)
-            .step_by(4)
     }
 }
 
