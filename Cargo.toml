@@ -46,8 +46,9 @@ png = ["imagefmt/png"]
 jpeg = ["imagefmt/jpeg"]
 blur = []
 scale = []
+brightness = []
 verbose = []
-default = ["suggestions", "color", "png", "jpeg", "blur", "scale"]
+default = ["suggestions", "color", "png", "jpeg", "blur", "scale", "brightness"]
 
 [profile.release]
 lto = true

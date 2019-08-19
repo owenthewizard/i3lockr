@@ -19,6 +19,23 @@ pub struct Cli {
     #[structopt(short = "v", long = "verbose", alias = "verb", alias = "debug")]
     pub verbose: bool,
 
+    /// Darken the screenshot by [1, 255]. Example: 15
+    #[structopt(
+        long = "darken",
+        visible_alias = "dark",
+        conflicts_with = "bright",
+        raw(validator = "validators::greater_than(0)")
+    )]
+    pub dark: Option<u8>,
+
+    /// Brighten the screenshot by [1, 255]. Example: 15
+    #[structopt(
+        long = "brighten",
+        visible_alias = "bright",
+        raw(validator = "validators::greater_than(0)")
+    )]
+    pub bright: Option<u8>,
+
     /// Blur strength. Example: 10
     #[structopt(
         short = "b",

@@ -110,6 +110,28 @@ fn main() -> Result<(), Box<dyn Error>> {
         warn_disabled!("scale");
     }
 
+    if let Some(b) = args.bright {
+        #[cfg(feature = "brightness")]
+        {
+            timer_start!(bright);
+            algorithms::brighten(shot.as_bgra_8888_mut(), b);
+            timer_time!("Brightening", bright);
+        }
+        #[cfg(not(feature = "brightness"))]
+        warn_disabled!("brightness");
+    }
+
+    if let Some(d) = args.dark {
+        #[cfg(feature = "brightness")]
+        {
+            timer_start!(dark);
+            algorithms::darken(shot.as_bgra_8888_mut(), d);
+            timer_time!("Darkening", dark);
+        }
+        #[cfg(not(feature = "brightness"))]
+        warn_disabled!("brightness");
+    }
+
     // overlay/invert on each monitor
     if let Some(ref path) = args.path {
         #[cfg(any(feature = "png", feature = "jpeg"))]
