@@ -17,6 +17,8 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
+        --brighten <bright>           Brighten the screenshot by [1, 255]. Example: 15 [aliases: bright]
+        --darken <dark>               Darken the screenshot by [1, 255]. Example: 15 [aliases: dark]
     -p, --scale <factor>              Scale factor. Increases blur strength by a factor of this. Example: 2
         --ignore-monitors <0,2>...    Don't overlay an icon on these monitors. Useful if you're mirroring displays. Must
                                       be comma separated. Example: 0,2 [aliases: ignore]
