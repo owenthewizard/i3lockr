@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::hint::unreachable_unchecked;
 use std::io::{self, Write};
-use std::panic;
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::Instant;
 
