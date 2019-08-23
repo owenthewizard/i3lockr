@@ -5,12 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- More multithreading? (hopefully)
+### Changed
+- Switch to `u32` rather than `[u8; 4]` for most operations
+- Refactor into more separate compile units
+- Switch from SysV SHM to Linux SHM
+
+### Added
+- Multithreaded brightness adjustment
+- Nearest-neighbor scaling
+---
 - Drop `imagefmt` dependency (probably)
-- Switch to `u32` rather than `[u8; 4]` (definitely)
-- Refactoring into more separate compile units (probably)
-- Switch from SysV SHM to Linux SHM (could also use POSIX I suppose...) (definitely)
-- Make use of hugepages (probably)
 
 ## [1.0.0-final] - 2019-06-27
 ### Changed

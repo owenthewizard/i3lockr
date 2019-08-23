@@ -22,7 +22,12 @@ use pixels::Pixels;
 #[cfg(feature = "blur")]
 mod ffi;
 
-#[cfg(any(feature = "scale", feature = "png", feature = "jpeg"))]
+#[cfg(any(
+    feature = "scale",
+    feature = "png",
+    feature = "jpeg",
+    feature = "brightness"
+))]
 mod algorithms;
 
 #[cfg(any(feature = "png", feature = "jpeg"))]

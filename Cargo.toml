@@ -27,6 +27,10 @@ version = "4"
 default-features = false
 optional = true
 
+[dependencies.rayon]
+version = "1"
+optional = true
+
 [dependencies.structopt]
 version = "0.2"
 default-features = false
@@ -44,11 +48,12 @@ suggestions = ["structopt/suggestions"]
 color = ["structopt/color"]
 png = ["imagefmt/png"]
 jpeg = ["imagefmt/jpeg"]
+threads = ["rayon"]
 blur = []
 scale = []
 brightness = []
 verbose = []
-default = ["suggestions", "color", "png", "jpeg", "blur", "scale", "brightness"]
+default = ["suggestions", "color", "png", "jpeg", "threads", "blur", "scale", "brightness"]
 
 [profile.release]
 lto = true
