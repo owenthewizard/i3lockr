@@ -154,17 +154,24 @@ fn main() -> Result<(), Box<dyn Error>> {
             let cookie = randr::get_screen_resources(&conn, screen.root());
             let reply = cookie.get_reply()?;
 
-            for (w, h) in reply
+            for (w, h, x, y) in reply
                 .crtcs()
                 .iter()
-                .filter_map(|x| {
-                    randr::get_crtc_info(&conn, *x, reply.timestamp())
+                .filter_map(|crtc| {
+                    randr::get_crtc_info(&conn, *crtc, reply.timestamp())
                         .get_reply()
                         .ok()
                 })
                 .enumerate()
-                .filter(|(i, x)| x.mode() != 0 && !args.ignore.contains(i))
-                .map(|(_, x)| (usize::from(x.width()), usize::from(x.height())))
+                .filter(|(i, m)| m.mode() != 0 && !args.ignore.contains(i))
+                .map(|(_, m)| {
+                    (
+                        usize::from(m.width()),
+                        usize::from(m.height()),
+                        m.x() as usize,
+                        m.y() as usize,
+                    )
+                })
             {
                 let (x_off, y_off) = if args.pos.is_empty() {
                     if image.w > w || image.h > h {
@@ -175,12 +182,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                                     )
                                 );
                     }
-                    (w / 2 - image.w / 2, h / 2 - image.h / 2)
+                    (w / 2 - image.w / 2 + x, h / 2 - image.h / 2 + y)
                 } else {
                     unsafe {
                         (
-                            wrap_to_screen(*args.pos.get_unchecked(0), w),
-                            wrap_to_screen(*args.pos.get_unchecked(1), h),
+                            wrap_to_screen(*args.pos.get_unchecked(0), w + x),
+                            wrap_to_screen(*args.pos.get_unchecked(1), h + y),
                         )
                     }
                 };
