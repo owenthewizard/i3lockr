@@ -22,7 +22,7 @@ macro_rules! handle_reply {
         match $e {
             Ok(r) => r,
             Err(e) => {
-                $cleanup;
+                $cleanup
                 return Err(XcbGeneric(e));
             }
         }
