@@ -2,13 +2,7 @@
 
 Distort a screenshot and run `i3lock`.
 
-## Important Notice
-
-As of June 27 2019 and the new `master` (what used to be `v2`) branch, `i3lockr` requires an unreleased version of [i3lock](https://github.com/i3/i3lock).
-In other words, build `i3lock` from the latest commit on GitHub.
-See [i3/i3lock#231](https://github.com/i3/i3lock/issues/231) to find out if a new release of `i3lock` is out.
-
-If you're on Arch Linux, you may use `i3lock-git` from the AUR.
+### Requires i3lock >= 2.12
 
 ## Quick start [[Documentation]](USAGE.md)
 
@@ -36,10 +30,6 @@ With `--blur=25`
 ![screenshot with blur 25](.github/blur-25.png)
 
 `i3lockr` (since v1.0.0) is incredibly fast at all blur levels, try timing it yourself with `time`.
-
-## Important Notes
-
-`i3lockr` always exits with `EXIT_SUCCESS`. This means that commands such as `i3lockr && systemctl suspend` may not lock the screen if there was an error.
 
 ### Coding Style
 
