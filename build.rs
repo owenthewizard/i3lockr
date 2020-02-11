@@ -18,7 +18,7 @@ fn main() {
     // Export build target, build time, and git commit
     println!(
         "cargo:rustc-env=TARGET={}",
-        env::var("TARGET").unwrap_or("Unknown Target".to_owned())
+        env::var("TARGET").unwrap_or_else(|_| "Unknown Target".to_owned())
     );
 
     let mut git_branch = "Unknown Branch".to_owned();
@@ -29,7 +29,8 @@ fn main() {
         .output()
     {
         if !out.stdout.is_empty() {
-            git_branch = String::from_utf8(out.stdout).unwrap_or("Unknown Branch".to_owned());
+            git_branch =
+                String::from_utf8(out.stdout).unwrap_or_else(|_| "Unknown Branch".to_owned());
         }
     }
 
@@ -38,7 +39,8 @@ fn main() {
         .output()
     {
         if !out.stdout.is_empty() {
-            git_commit = String::from_utf8(out.stdout).unwrap_or("Unknown Commit".to_owned());
+            git_commit =
+                String::from_utf8(out.stdout).unwrap_or_else(|_| "Unknown Commit".to_owned());
         }
     }
 

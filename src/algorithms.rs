@@ -109,7 +109,7 @@ pub fn brighten(data: &mut [u8], factor: u8) {
     data.par_chunks_mut(4).for_each(|p| {
         let mut channels = p.iter_mut();
         let _ = channels.next_back(); // skip alpha
-        channels.for_each(|x| *x = (*x).checked_add(factor).unwrap_or(255));
+        channels.for_each(|x| *x = (*x).saturating_add(factor));
     })
 }
 
@@ -118,7 +118,7 @@ pub fn brighten(data: &mut [u8], factor: u8) {
     data.chunks_exact_mut(4).for_each(|p| {
         let mut channels = p.iter_mut();
         let _ = channels.next_back(); // skip alpha
-        channels.for_each(|x| *x = (*x).checked_add(factor).unwrap_or(255));
+        channels.for_each(|x| *x = (*x).saturating_add(factor));
     })
 }
 
@@ -127,7 +127,7 @@ pub fn darken(data: &mut [u8], factor: u8) {
     data.par_chunks_mut(4).for_each(|p| {
         let mut channels = p.iter_mut();
         let _ = channels.next_back(); // skip alpha
-        channels.for_each(|x| *x = (*x).checked_sub(factor).unwrap_or(0));
+        channels.for_each(|x| *x = (*x).saturating_sub(factor));
     })
 }
 
@@ -136,6 +136,6 @@ pub fn darken(data: &mut [u8], factor: u8) {
     data.chunks_exact_mut(4).for_each(|p| {
         let mut channels = p.iter_mut();
         let _ = channels.next_back(); // skip alpha
-        channels.for_each(|x| *x = (*x).checked_sub(factor).unwrap_or(0));
+        channels.for_each(|x| *x = (*x).saturating_sub(factor));
     })
 }
