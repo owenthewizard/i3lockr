@@ -3,7 +3,7 @@
 See the help:
 
 ```
-i3lockr 1.0.0-final
+i3lockr 1.1.0
 Owen Walpole <owenthewizard@hotmail.com>
 Distort a screenshot and run i3lock
 
