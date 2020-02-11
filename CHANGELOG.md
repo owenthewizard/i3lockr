@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2020-02-10
 ### Changed
 - Switch to `u32` rather than `[u8; 4]` for most operations
 - Refactor into more separate compile units
@@ -13,8 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Multithreaded brightness adjustment
 - Nearest-neighbor scaling
----
-- Drop `imagefmt` dependency (probably)
 
 ## [1.0.0-final] - 2019-06-27
 ### Changed
