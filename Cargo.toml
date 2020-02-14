@@ -18,9 +18,11 @@ maintenance = { status = "actively-developed" }
 
 
 [dependencies]
+imgref = "1.4"
 itertools = "0.8"
 libc = "0.2" # should be same as xcb
 num_cpus = "1"
+rgb = "0.8"
 
 [dependencies.imagefmt]
 version = "4"
@@ -30,6 +32,9 @@ optional = true
 [dependencies.rayon]
 version = "1"
 optional = true
+
+[dependencies.scrap]
+path = "crates/scrap"
 
 [dependencies.structopt]
 version = "0.2"
