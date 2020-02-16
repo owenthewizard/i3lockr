@@ -18,7 +18,7 @@ macro_rules! warn_disabled {
         eprintln!(
             "{}",
             Format::Warning(format!(
-                "Feature \"{f}\" was not enabled at compile-time. Skipping {f}",
+                "Feature \"{f}\" was not enabled at compile-time. Skipping {f}.",
                 f = $s
             ))
         );
