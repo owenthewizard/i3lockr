@@ -1,18 +1,17 @@
 use std::borrow::Cow;
 use std::error::Error;
 use std::hint::unreachable_unchecked;
-use std::io::{self, Write};
 use std::io::ErrorKind::WouldBlock;
+use std::io::{self, Write};
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 
 use std::os::unix::process::ExitStatusExt;
 use std::thread::sleep;
 
-use imgref::Img;
+use imgref::ImgRefMut;
 
-use rgb::FromSlice;
-use rgb::ComponentBytes;
+use rgb::{ComponentBytes, FromSlice};
 
 use scrap::{Capturer, Display, Frame};
 
@@ -31,12 +30,7 @@ use pixels::Pixels;
 #[cfg(feature = "blur")]
 mod ffi;
 
-#[cfg(any(
-    feature = "scale",
-    feature = "png",
-    feature = "jpeg",
-    feature = "brightness"
-))]
+#[cfg(any(feature = "png", feature = "jpeg", feature = "brightness"))]
 mod algorithms;
 
 #[cfg(any(feature = "png", feature = "jpeg"))]
@@ -45,7 +39,9 @@ use imagefmt::ColFmt;
 use xcb::randr;
 
 #[cfg(feature = "scale")]
-use algorithms::Scale;
+mod scale;
+#[cfg(feature = "scale")]
+use scale::Scale;
 
 fn main() -> Result<(), Box<dyn Error>> {
     timer_start!(everything);
@@ -89,7 +85,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut buffer: Frame;
     loop {
         match capture.frame() {
-            Ok(mut buf) => {
+            Ok(buf) => {
                 buffer = buf;
                 break;
             }
@@ -98,31 +94,32 @@ fn main() -> Result<(), Box<dyn Error>> {
                     sleep(Duration::from_millis(33));
                     continue;
                 } else {
-                    return Err(e.into())
+                    return Err(e.into());
                 }
             }
         }
     }
     timer_time!("Capturing screenshot", screenshot);
 
+    // convert to imgref
     timer_start!(convert);
-    let mut buf_bgra = buffer.as_mut().as_bgra_mut();
-    let mut screenshot = Img::new(buf_bgra, w, h);
+    let buf_bgra = buffer.as_bgra_mut();
+    let mut screenshot = ImgRefMut::new(buf_bgra, w, h);
     timer_time!("Converting image", convert);
 
-    //debug!("Image is at /dev/shm{}", shot.path());
-
+    // scale down
     if let Some(f) = args.factor {
         #[cfg(feature = "scale")]
         {
             timer_start!(downscale);
-            //shot.scale_down(f);
+            unsafe { screenshot.scale_down(f) };
             timer_time!("Downscaling", downscale);
         }
         #[cfg(not(feature = "scale"))]
         warn_disabled!("scale");
     }
 
+    // blur
     if let Some(r) = args.radius {
         #[cfg(feature = "blur")]
         {
@@ -133,24 +130,26 @@ fn main() -> Result<(), Box<dyn Error>> {
                 w as libc::c_int,
                 h as libc::c_int,
                 libc::c_int::from(r),
-                );
+            );
             timer_time!("Blurring", blur);
         }
         #[cfg(not(feature = "blur"))]
         warn_disabled!("blur");
     }
 
+    // scale back up
     if let Some(f) = args.factor {
         #[cfg(feature = "scale")]
         {
             timer_start!(upscale);
-            shot.scale_up(f);
+            unsafe { screenshot.scale_up(f) };
             timer_time!("Upscaling", upscale);
         }
         #[cfg(not(feature = "scale"))]
         warn_disabled!("scale");
     }
 
+    // brighten
     if let Some(b) = args.bright {
         #[cfg(feature = "brightness")]
         {
@@ -162,6 +161,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         warn_disabled!("brightness");
     }
 
+    // darken
     if let Some(d) = args.dark {
         #[cfg(feature = "brightness")]
         {
@@ -193,13 +193,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             for (w, h, x, y) in reply
                 .crtcs()
-                    .iter()
-                    .filter_map(|crtc| {
-                        randr::get_crtc_info(&conn, *crtc, reply.timestamp())
-                            .get_reply()
-                            .ok()
-                    })
-            .enumerate()
+                .iter()
+                .filter_map(|crtc| {
+                    randr::get_crtc_info(&conn, *crtc, reply.timestamp())
+                        .get_reply()
+                        .ok()
+                })
+                .enumerate()
                 .filter(|(i, m)| m.mode() != 0 && !args.ignore.contains(i))
                 .map(|(_, m)| {
                     (
@@ -207,7 +207,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         usize::from(m.height()),
                         m.x() as usize,
                         m.y() as usize,
-                        )
+                    )
                 })
             {
                 let (x_off, y_off) = if args.pos.is_empty() {
@@ -225,14 +225,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                         (
                             wrap_to_screen(*args.pos.get_unchecked(0), w + x),
                             wrap_to_screen(*args.pos.get_unchecked(1), h + y),
-                            )
+                        )
                     }
                 };
 
                 debug!(
                     "Calculated image position on monitor: ({},{})",
                     x_off, y_off
-                    );
+                );
 
                 timer_start!(overlay);
                 algorithms::overlay(&mut shot, &image, x_off, y_off, args.invert);
@@ -254,20 +254,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     debug!("Calling i3lock with args: {:?}", args.i3lock);
     let mut cmd = Command::new("i3lock")
         .args(&[
-              "-i",
-              "/dev/stdin",
-              //FIXME
-              &format!("--raw={}x{}:native", 2560, 1080),
+            "-i",
+            "/dev/stdin",
+            //FIXME
+            &format!("--raw={}x{}:native", w, h),
         ])
         .args(args.i3lock)
         .stdin(Stdio::piped())
         .spawn()?;
 
     // pass image bytes
-       cmd.stdin
-       .as_mut()
-       .expect("Failed to take cmd.stdin.as_mut()")
-       .write_all(screenshot.into_buf().as_bytes())?;
+    cmd.stdin
+        .as_mut()
+        .expect("Failed to take cmd.stdin.as_mut()")
+        .write_all(screenshot.into_buf().as_bytes())?;
 
     timer_time!("Everything", everything);
 
@@ -293,12 +293,12 @@ fn status_to_result(status: ExitStatus) -> Result<(), Box<dyn Error>> {
         Err(io::Error::from_raw_os_error(code).into())
     } else {
         Err(format!(
-                "Killed by signal: {}",
-                status
+            "Killed by signal: {}",
+            status
                 .signal()
                 .unwrap_or_else(|| unsafe { unreachable_unchecked() })
-                )
-            .into())
+        )
+        .into())
     }
 }
 
@@ -319,12 +319,12 @@ fn wrap_to_screen(idx: isize, len: usize) -> usize {
 
 fn forking<'a, I>(args: I) -> bool
 where
-I: Iterator<Item = Cow<'a, str>> + Clone,
+    I: Iterator<Item = Cow<'a, str>> + Clone,
 {
     args.clone().any(|x| x == "--nofork")
         || args
-        .filter(|x| !x.starts_with("--"))
-        .any(|x| x.contains('n'))
+            .filter(|x| !x.starts_with("--"))
+            .any(|x| x.contains('n'))
 }
 
 #[cfg(test)]
@@ -334,43 +334,43 @@ mod tests {
     #[test]
     fn nofork() {
         assert!(forking(
-                [
+            [
                 "-n",
                 "--insidecolor=542095ff",
                 "--ringcolor=ffffffff",
                 "--line-uses-inside"
-                ]
-                .iter()
-                .map(|x| Cow::Borrowed(*x))
-                ));
+            ]
+            .iter()
+            .map(|x| Cow::Borrowed(*x))
+        ));
         assert!(!forking(
-                [
+            [
                 "--insidecolor=542095ff",
                 "--ringcolor=ffffffff",
                 "--line-uses-inside"
-                ]
-                .iter()
-                .map(|x| Cow::Borrowed(*x))
-                ));
+            ]
+            .iter()
+            .map(|x| Cow::Borrowed(*x))
+        ));
         assert!(forking(
-                [
+            [
                 "--insidecolor=542095ff",
                 "--ringcolor=ffffffff",
                 "-en",
                 "--line-uses-inside"
-                ]
-                .iter()
-                .map(|x| Cow::Borrowed(*x))
-                ));
+            ]
+            .iter()
+            .map(|x| Cow::Borrowed(*x))
+        ));
         assert!(!forking(
-                [
+            [
                 "--ringcolor=ffffffff",
                 "-e",
                 "--insidecolor=542095ff",
                 "--line-uses-inside"
-                ]
-                .iter()
-                .map(|x| Cow::Borrowed(*x))
-                ));
+            ]
+            .iter()
+            .map(|x| Cow::Borrowed(*x))
+        ));
     }
 }

@@ -21,48 +21,6 @@ const AG_MASK_SHR: u32 = AG_MASK >> 8;
 #[cfg(any(feature = "png", feature = "jpeg"))]
 const ONE_ALPHA: u32 = 0x01 << 24;
 
-#[cfg(feature = "scale")]
-pub trait Scale {
-    fn scale_up(&mut self, factor: usize);
-    fn scale_down(&mut self, factor: usize);
-}
-
-#[cfg(feature = "scale")]
-impl Scale for Pixels {
-    // copied and modified from https://stackoverflow.com/a/28572644/5819375
-    fn scale_down(&mut self, factor: usize) {
-        let src_w = self.width;
-        self.width /= factor;
-        self.height /= factor;
-        for (y, x) in iproduct!(0..self.height, 0..self.width) {
-            let y2_xsource = y * factor * src_w;
-            let i_xdest = y * self.width;
-            let x2 = x * factor;
-
-            unsafe {
-                *self.as_argb_32_mut().get_unchecked_mut(i_xdest + x) =
-                    *self.as_argb_32_mut().get_unchecked(y2_xsource + x2);
-            }
-        }
-    }
-
-    fn scale_up(&mut self, factor: usize) {
-        let src_w = self.width;
-        self.width *= factor;
-        self.height *= factor;
-        for (y, x) in iproduct!((0..self.height).rev(), (0..self.width).rev()) {
-            let y2_xsource = y / factor * src_w;
-            let i_xdest = y * self.width;
-            let x2 = x / factor;
-
-            unsafe {
-                *self.as_argb_32_mut().get_unchecked_mut(i_xdest + x) =
-                    *self.as_argb_32_mut().get_unchecked(y2_xsource + x2);
-            }
-        }
-    }
-}
-
 #[cfg(any(feature = "png", feature = "jpeg"))]
 pub fn overlay(
     bot: &mut Pixels,
