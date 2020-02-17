@@ -37,7 +37,7 @@ optional = true
 path = "crates/scrap"
 
 [dependencies.structopt]
-version = "0.2"
+version = "0.3"
 default-features = false
 
 [dependencies.xcb]
@@ -46,7 +46,7 @@ features = ["randr", "shm"]
 
 [build-dependencies]
 cc = "1"
-structopt = { version = "0.2", default-features = false }
+structopt = { version = "0.3", default-features = false }
 
 [features]
 suggestions = ["structopt/suggestions"]
