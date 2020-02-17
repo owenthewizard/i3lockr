@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::num::{NonZeroU8, NonZeroUsize};
 use std::path::PathBuf;
 
 use structopt::StructOpt;
@@ -24,34 +25,30 @@ pub struct Cli {
         long = "darken",
         visible_alias = "dark",
         conflicts_with = "bright",
-        raw(validator = "validators::greater_than(0)")
     )]
-    pub dark: Option<u8>,
+    pub dark: Option<NonZeroU8>,
 
     /// Brighten the screenshot by [1, 255]. Example: 15
     #[structopt(
         long = "brighten",
         visible_alias = "bright",
-        raw(validator = "validators::greater_than(0)")
     )]
-    pub bright: Option<u8>,
+    pub bright: Option<NonZeroU8>,
 
     /// Blur strength. Example: 10
     #[structopt(
         short = "b",
         long = "blur",
-        raw(validator = "validators::greater_than(0)"),
         alias = "rad"
     )]
-    pub radius: Option<u8>,
+    pub radius: Option<NonZeroU8>,
 
     /// Scale factor. Increases blur strength by a factor of this. Example: 2
     #[structopt(
         short = "p",
         long = "scale",
-        raw(validator = "validators::greater_than(0)")
     )]
-    pub factor: Option<usize>,
+    pub factor: Option<NonZeroUsize>,
 
     /// Don't overlay an icon on these monitors. Useful if you're mirroring displays. Must be comma separated.
     /// Example: 0,2
