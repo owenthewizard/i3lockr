@@ -43,6 +43,11 @@ mod scale;
 #[cfg(feature = "scale")]
 use scale::Scale;
 
+//#[cfg(feature = "blur")]
+mod blur;
+//#[cfg(feature = "blur")]
+use blur::Blur;
+
 fn main() -> Result<(), Box<dyn Error>> {
     timer_start!(everything);
     // parse args, handle custom `--version`
@@ -108,11 +113,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     timer_time!("Converting image", convert);
 
     // scale down
+    let mut scaled_img = None;
     if let Some(f) = args.factor {
         #[cfg(feature = "scale")]
         {
             timer_start!(downscale);
-            unsafe { screenshot.scale_down(f) };
+            unsafe { scaled_img = Some(screenshot.scale_down(f)) };
             timer_time!("Downscaling", downscale);
         }
         #[cfg(not(feature = "scale"))]
@@ -135,6 +141,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         #[cfg(not(feature = "blur"))]
         warn_disabled!("blur");
+    }
+
+    if let Some(r) = args.radius {
+        //screenshot.blur(r)
     }
 
     // scale back up

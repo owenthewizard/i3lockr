@@ -1,6 +1,7 @@
 use std::num::NonZeroUsize;
 
 use imgref::ImgRefMut;
+use imgref::ImgExt;
 
 use itertools::iproduct;
 
@@ -8,11 +9,11 @@ use rgb::alt::BGRA8;
 
 pub trait Scale {
     unsafe fn scale_up(&mut self, factor: NonZeroUsize);
-    unsafe fn scale_down(&mut self, factor: NonZeroUsize);
+    unsafe fn scale_down(&mut self, factor: NonZeroUsize) -> ImgRefMut<BGRA8>;
 }
 
 impl Scale for ImgRefMut<'_, BGRA8> {
-    unsafe fn scale_down(&mut self, factor: NonZeroUsize) {
+    unsafe fn scale_down(&mut self, factor: NonZeroUsize) -> ImgRefMut<BGRA8> {
         let factor = factor.get();
         let (w, h) = (self.width(), self.height());
         for (y, x) in iproduct!(0..h / factor, 0..w / factor) {
@@ -20,11 +21,12 @@ impl Scale for ImgRefMut<'_, BGRA8> {
             *self.buf_mut().get_unchecked_mut(y * w + x) =
                 *self.buf().get_unchecked(y * factor * w + x * factor);
         }
+        self.sub_image_mut(0, 0, w / factor, h / factor)
     }
 
     unsafe fn scale_up(&mut self, factor: NonZeroUsize) {
         let factor = factor.get();
-        let (w, h) = (self.width(), self.height());
+        let (w, h) = (self.width_padded(), self.height_padded());
         for (y, x) in iproduct!((0..h).rev(), (0..w).rev()) {
             // we use this instead of index() to avoid bounds checks
             *self.buf_mut().get_unchecked_mut(y * w + x) =
