@@ -1,7 +1,7 @@
 use std::num::NonZeroUsize;
 
-use imgref::ImgRefMut;
 use imgref::ImgExt;
+use imgref::ImgRefMut;
 
 use itertools::iproduct;
 

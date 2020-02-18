@@ -21,33 +21,19 @@ pub struct Cli {
     pub verbose: bool,
 
     /// Darken the screenshot by [1, 255]. Example: 15
-    #[structopt(
-        long = "darken",
-        visible_alias = "dark",
-        conflicts_with = "bright",
-    )]
+    #[structopt(long = "darken", visible_alias = "dark", conflicts_with = "bright")]
     pub dark: Option<NonZeroU8>,
 
     /// Brighten the screenshot by [1, 255]. Example: 15
-    #[structopt(
-        long = "brighten",
-        visible_alias = "bright",
-    )]
+    #[structopt(long = "brighten", visible_alias = "bright")]
     pub bright: Option<NonZeroU8>,
 
     /// Blur strength. Example: 10
-    #[structopt(
-        short = "b",
-        long = "blur",
-        alias = "rad"
-    )]
+    #[structopt(short = "b", long = "blur", alias = "rad")]
     pub radius: Option<NonZeroU8>,
 
     /// Scale factor. Increases blur strength by a factor of this. Example: 2
-    #[structopt(
-        short = "p",
-        long = "scale",
-    )]
+    #[structopt(short = "p", long = "scale")]
     pub factor: Option<NonZeroUsize>,
 
     /// Don't overlay an icon on these monitors. Useful if you're mirroring displays. Must be comma separated.
