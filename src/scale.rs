@@ -9,11 +9,11 @@ use rgb::alt::BGRA8;
 
 pub trait Scale {
     unsafe fn scale_up(&mut self, factor: NonZeroUsize);
-    unsafe fn scale_down(&mut self, factor: NonZeroUsize) -> ImgRefMut<BGRA8>;
+    unsafe fn scale_down(&mut self, factor: NonZeroUsize);
 }
 
 impl Scale for ImgRefMut<'_, BGRA8> {
-    unsafe fn scale_down(&mut self, factor: NonZeroUsize) -> ImgRefMut<BGRA8> {
+    unsafe fn scale_down(&mut self, factor: NonZeroUsize) {
         let factor = factor.get();
         let (w, h) = (self.width(), self.height());
         for (y, x) in iproduct!(0..h / factor, 0..w / factor) {
@@ -21,7 +21,6 @@ impl Scale for ImgRefMut<'_, BGRA8> {
             *self.buf_mut().get_unchecked_mut(y * w + x) =
                 *self.buf().get_unchecked(y * factor * w + x * factor);
         }
-        self.sub_image_mut(0, 0, w / factor, h / factor)
     }
 
     unsafe fn scale_up(&mut self, factor: NonZeroUsize) {

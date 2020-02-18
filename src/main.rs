@@ -11,7 +11,6 @@ use std::thread::sleep;
 
 use imgref::ImgRefMut;
 
-use rgb::alt::BGRA8;
 use rgb::{ComponentBytes, FromSlice};
 
 use scrap::{Capturer, Display, Frame};
@@ -113,12 +112,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     timer_time!("Converting image", convert);
 
     // scale down
-    let mut scaled_img: Option<ImgRefMut<BGRA8>> = None;
     if let Some(f) = args.factor {
         #[cfg(feature = "scale")]
         {
             timer_start!(downscale);
-            unsafe { scaled_img = Some(screenshot.scale_down(f)) };
+            unsafe { screenshot.scale_down(f) };
             timer_time!("Downscaling", downscale);
         }
         #[cfg(not(feature = "scale"))]
@@ -126,6 +124,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // blur
+    // currently blurs the entire image, even if it's been scaled down
     if let Some(r) = args.radius {
         #[cfg(feature = "blur")]
         {
