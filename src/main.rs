@@ -27,9 +27,6 @@ mod pixels;
 use cli::Cli;
 use pixels::Pixels;
 
-#[cfg(feature = "blur")]
-mod ffi;
-
 #[cfg(any(feature = "png", feature = "jpeg", feature = "brightness"))]
 mod algorithms;
 
@@ -43,9 +40,9 @@ mod scale;
 #[cfg(feature = "scale")]
 use scale::Scale;
 
-//#[cfg(feature = "blur")]
+#[cfg(feature = "blur")]
 mod blur;
-//#[cfg(feature = "blur")]
+#[cfg(feature = "blur")]
 use blur::Blur;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -130,21 +127,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         #[cfg(feature = "blur")]
         {
             timer_start!(blur);
-            let (w, h) = shot.dimensions();
-            ffi::blur(
-                shot.as_bgra_8888_mut(),
-                w as libc::c_int,
-                h as libc::c_int,
-                libc::c_int::from(r),
-            );
+            unsafe { screenshot.blur(r)? };
             timer_time!("Blurring", blur);
         }
         #[cfg(not(feature = "blur"))]
         warn_disabled!("blur");
-    }
-
-    if let Some(r) = args.radius {
-        //screenshot.blur(r)
     }
 
     // scale back up
