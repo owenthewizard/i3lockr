@@ -1,14 +1,9 @@
 #![cfg(any(
-    feature = "scale",
     feature = "png",
     feature = "jpeg",
-    feature = "brightness"
 ))]
 
 use itertools::iproduct;
-
-#[cfg(feature = "threads")]
-use rayon::prelude::*;
 
 use crate::pixels::Pixels;
 
@@ -60,40 +55,4 @@ pub fn overlay(
             }
         }
     }
-}
-
-#[cfg(all(feature = "brightness", feature = "threads"))]
-pub fn brighten(data: &mut [u8], factor: u8) {
-    data.par_chunks_mut(4).for_each(|p| {
-        let mut channels = p.iter_mut();
-        let _ = channels.next_back(); // skip alpha
-        channels.for_each(|x| *x = (*x).saturating_add(factor));
-    })
-}
-
-#[cfg(all(feature = "brightness", not(feature = "threads")))]
-pub fn brighten(data: &mut [u8], factor: u8) {
-    data.chunks_exact_mut(4).for_each(|p| {
-        let mut channels = p.iter_mut();
-        let _ = channels.next_back(); // skip alpha
-        channels.for_each(|x| *x = (*x).saturating_add(factor));
-    })
-}
-
-#[cfg(all(feature = "brightness", feature = "threads"))]
-pub fn darken(data: &mut [u8], factor: u8) {
-    data.par_chunks_mut(4).for_each(|p| {
-        let mut channels = p.iter_mut();
-        let _ = channels.next_back(); // skip alpha
-        channels.for_each(|x| *x = (*x).saturating_sub(factor));
-    })
-}
-
-#[cfg(all(feature = "brightness", not(feature = "threads")))]
-pub fn darken(data: &mut [u8], factor: u8) {
-    data.chunks_exact_mut(4).for_each(|p| {
-        let mut channels = p.iter_mut();
-        let _ = channels.next_back(); // skip alpha
-        channels.for_each(|x| *x = (*x).saturating_sub(factor));
-    })
 }

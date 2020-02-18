@@ -11,6 +11,7 @@ use std::thread::sleep;
 
 use imgref::ImgRefMut;
 
+use rgb::alt::BGRA8;
 use rgb::{ComponentBytes, FromSlice};
 
 use scrap::{Capturer, Display, Frame};
@@ -22,14 +23,11 @@ use xcb::Connection;
 
 mod cli;
 mod macros;
-mod pixels;
 
 use cli::Cli;
-use pixels::Pixels;
 
-#[cfg(any(feature = "png", feature = "jpeg", feature = "brightness"))]
+#[cfg(any(feature = "png", feature = "jpeg"))]
 mod algorithms;
-
 #[cfg(any(feature = "png", feature = "jpeg"))]
 use imagefmt::ColFmt;
 #[cfg(any(feature = "png", feature = "jpeg"))]
@@ -44,6 +42,11 @@ use scale::Scale;
 mod blur;
 #[cfg(feature = "blur")]
 use blur::Blur;
+
+#[cfg(feature = "brightness")]
+mod brightness;
+#[cfg(feature = "brightness")]
+use brightness::BrightnessAdj;
 
 fn main() -> Result<(), Box<dyn Error>> {
     timer_start!(everything);
@@ -110,7 +113,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     timer_time!("Converting image", convert);
 
     // scale down
-    let mut scaled_img = None;
+    let mut scaled_img: Option<ImgRefMut<BGRA8>> = None;
     if let Some(f) = args.factor {
         #[cfg(feature = "scale")]
         {
@@ -151,7 +154,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         #[cfg(feature = "brightness")]
         {
             timer_start!(bright);
-            algorithms::brighten(shot.as_bgra_8888_mut(), b);
+            screenshot.brighten(b);
             timer_time!("Brightening", bright);
         }
         #[cfg(not(feature = "brightness"))]
@@ -163,7 +166,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         #[cfg(feature = "brightness")]
         {
             timer_start!(dark);
-            algorithms::darken(shot.as_bgra_8888_mut(), d);
+            screenshot.darken(d);
             timer_time!("Darkening", dark);
         }
         #[cfg(not(feature = "brightness"))]
