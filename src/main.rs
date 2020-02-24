@@ -111,65 +111,27 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut screenshot = ImgRefMut::new(buf_bgra, w, h);
     timer_time!("Converting image", convert);
 
-    // scale down
-    if let Some(f) = args.factor {
-        #[cfg(feature = "scale")]
-        {
-            timer_start!(downscale);
-            unsafe { screenshot.scale_down(f) };
-            timer_time!("Downscaling", downscale);
-        }
-        #[cfg(not(feature = "scale"))]
-        warn_disabled!("scale");
-    }
-
-    // blur
-    // currently blurs the entire image, even if it's been scaled down
-    if let Some(r) = args.radius {
-        #[cfg(feature = "blur")]
-        {
-            timer_start!(blur);
-            unsafe { screenshot.blur(r)? };
-            timer_time!("Blurring", blur);
-        }
-        #[cfg(not(feature = "blur"))]
-        warn_disabled!("blur");
-    }
-
-    // scale back up
-    if let Some(f) = args.factor {
-        #[cfg(feature = "scale")]
-        {
-            timer_start!(upscale);
-            unsafe { screenshot.scale_up(f) };
-            timer_time!("Upscaling", upscale);
-        }
-        #[cfg(not(feature = "scale"))]
-        warn_disabled!("scale");
-    }
-
-    // brighten
-    if let Some(b) = args.bright {
-        #[cfg(feature = "brightness")]
-        {
-            timer_start!(bright);
-            screenshot.brighten(b);
-            timer_time!("Brightening", bright);
-        }
-        #[cfg(not(feature = "brightness"))]
-        warn_disabled!("brightness");
-    }
-
-    // darken
-    if let Some(d) = args.dark {
-        #[cfg(feature = "brightness")]
-        {
-            timer_start!(dark);
-            screenshot.darken(d);
-            timer_time!("Darkening", dark);
-        }
-        #[cfg(not(feature = "brightness"))]
-        warn_disabled!("brightness");
+    // blur is unsafe
+    // TODO: bubble errors
+    unsafe {
+        time_routine!(
+            screenshot,
+            scale_down,
+            args.factor,
+            "scale",
+            blur,
+            args.radius,
+            "blur",
+            scale_up,
+            args.factor,
+            "scale",
+            brighten,
+            args.bright,
+            "brightness",
+            darken,
+            args.dark,
+            "brightness"
+        );
     }
 
     // overlay/invert on each monitor
