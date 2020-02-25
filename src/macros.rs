@@ -28,16 +28,15 @@ macro_rules! warn_disabled {
 #[macro_export]
 macro_rules! time_routine {
     ($operand:ident, $F:ident, $Arg:expr, $feat:literal) => {
+        if let Some(arg) = $Arg {
         #[cfg(feature = $feat)]
         {
-            if let Some(arg) = $Arg {
                 let timer = Instant::now();
 
                 $operand.$F(arg);
 
                 debug!("`{}.{}({})` took {:#?}", stringify!($operand), stringify!($F), arg, timer.elapsed());
             }
-        }
 
         #[cfg(not(feature = $feat))]
         {
@@ -47,6 +46,7 @@ macro_rules! time_routine {
                         "Feature {} was not enabled at compile-time. Skipping {}.", stringify!($feat), stringify!($F)
                 ))
             );
+        }
         }
     };
 
