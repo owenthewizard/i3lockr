@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use std::os::unix::process::ExitStatusExt;
 use std::thread::sleep;
 
-use imgref::ImgRefMut;
+use imgref::{ImgRef, ImgRefMut};
 
 use rgb::{ComponentBytes, FromSlice};
 
@@ -25,8 +25,6 @@ mod macros;
 
 use cli::Cli;
 
-#[cfg(any(feature = "png", feature = "jpeg"))]
-mod algorithms;
 #[cfg(any(feature = "png", feature = "jpeg"))]
 use imagefmt::ColFmt;
 #[cfg(any(feature = "png", feature = "jpeg"))]
@@ -46,6 +44,11 @@ use blur::Blur;
 mod brightness;
 #[cfg(feature = "brightness")]
 use brightness::BrightnessAdj;
+
+#[cfg(any(feature = "png", feature = "jpeg"))]
+mod overlay;
+#[cfg(any(feature = "png", feature = "jpeg"))]
+use overlay::Compose;
 
 fn main() -> Result<(), Box<dyn Error>> {
     timer_start!(everything);
@@ -139,7 +142,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         #[cfg(any(feature = "png", feature = "jpeg"))]
         {
             timer_start!(decode);
-            let image = imagefmt::read(path, ColFmt::BGRA)?;
+            let mut image = imagefmt::read(path, ColFmt::BGRA)?;
+            // imagefmt and imgref disagree about what alpha is
+            image
+                .buf
+                .iter_mut()
+                .skip(3)
+                .step_by(4)
+                .for_each(|x| *x = !*x);
+            let image = imgref::ImgRef::new(image.buf.as_bgra(), image.w, image.h);
             timer_time!("Decoding overlay image", decode);
 
             // get handle on monitors
@@ -172,7 +183,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 })
             {
                 let (x_off, y_off) = if args.pos.is_empty() {
-                    if image.w > w || image.h > h {
+                    if image.width() > w || image.height() > h {
                         eprintln!(
                             "{}",
                             Format::Warning(
@@ -180,7 +191,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 )
                             );
                     }
-                    (w / 2 - image.w / 2 + x, h / 2 - image.h / 2 + y)
+                    (
+                        w / 2 - image.width() / 2 + x,
+                        h / 2 - image.height() / 2 + y,
+                    )
                 } else {
                     unsafe {
                         (
@@ -196,12 +210,20 @@ fn main() -> Result<(), Box<dyn Error>> {
                 );
 
                 timer_start!(overlay);
-                algorithms::overlay(&mut shot, &image, x_off, y_off, args.invert);
+                if args.invert {
+                    screenshot.invert(Some(image), x_off, y_off);
+                } else {
+                    screenshot.compose(image, x_off, y_off);
+                }
                 timer_time!("Overlaying image", overlay);
             }
         }
         #[cfg(not(any(feature = "png", feature = "jpeg")))]
         warn_disabled!("png/jpeg overlay");
+    } else if args.invert {
+        timer_start!(invert);
+        screenshot.invert(None, 0, 0);
+        timer_time!("Inverting image", invert);
     }
 
     //TODO draw text

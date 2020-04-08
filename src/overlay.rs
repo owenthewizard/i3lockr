@@ -1,7 +1,8 @@
+use std::convert::TryInto;
+use std::hint::unreachable_unchecked;
+
 use imgref::ImgRef;
 use imgref::ImgRefMut;
-
-use rayon::prelude::*;
 
 use rgb::alt::BGRA8;
 use rgb::ComponentSlice;
@@ -19,8 +20,20 @@ pub trait Compose {
 impl Compose for ImgRefMut<'_, BGRA8> {
     fn compose(&mut self, top: ImgRef<BGRA8>, x: usize, y: usize) {
         let mut view = self.sub_image_mut(x, y, top.width(), top.height());
+        // we may want this later if composing an image without alpha
+        /*
         for (bot_row, top_row) in view.rows_mut().zip(top.rows()) {
             bot_row.copy_from_slice(top_row);
+        */
+        // as below, doing this as rows so padding isn't included
+        for (bot_row, top_row) in view.rows_mut().zip(top.rows()) {
+            for (bot_pixel, top_pixel) in bot_row.iter_mut().zip(top_row.iter()) {
+                match top_pixel.a {
+                    255 => continue,                                 // invisible
+                    0 => *bot_pixel = *top_pixel,                    // opaque
+                    _ => *bot_pixel = blend(*bot_pixel, *top_pixel), // alpha blend
+                }
+            }
         }
     }
 
@@ -47,4 +60,23 @@ impl Compose for ImgRefMut<'_, BGRA8> {
     }
 }
 
-fn blend(px_a: BGRA8, px_b: BGRA8) {}
+fn blend(px_a: BGRA8, px_b: BGRA8) -> BGRA8 {
+    let bgra_1 = u32::from_ne_bytes(
+        px_a.as_slice()
+            .try_into()
+            .unwrap_or_else(|_| unsafe { unreachable_unchecked() }),
+    );
+    let bgra_2 = u32::from_ne_bytes(
+        px_b.as_slice()
+            .try_into()
+            .unwrap_or_else(|_| unsafe { unreachable_unchecked() }),
+    );
+
+    let src_a = u32::from(px_b.a);
+    let na = 255 - src_a;
+
+    let rb = ((na * (bgra_1 & RB_MASK)) + (src_a * (bgra_2 & RB_MASK))) >> 8;
+    let ag = (na * ((bgra_1 >> 8) & AG_MASK_SHR)) + (src_a * (ONE_ALPHA | ((bgra_2 >> 8) & 0xff)));
+
+    BGRA8::from(((rb & RB_MASK) | (ag & AG_MASK)).to_ne_bytes())
+}
