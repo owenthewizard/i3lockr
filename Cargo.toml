@@ -19,7 +19,7 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 imgref = "1.4"
-itertools = "0.8"
+itertools = "0.10"
 libc = "0.2" # should be same as xcb
 num_cpus = "1"
 rgb = "0.8"
@@ -41,7 +41,7 @@ version = "0.3"
 default-features = false
 
 [dependencies.xcb]
-version = "0.8"
+version = "0.9"
 features = ["randr", "shm"]
 
 [build-dependencies]
