@@ -17,7 +17,6 @@ pub trait Blur {
 }
 
 impl Blur for ImgRefMut<'_, BGRA8> {
-    #[must_use]
     unsafe fn blur(&mut self, radius: NonZeroU8) -> Result<(), TryFromIntError> {
         let w = c_int::try_from(self.width())?;
         let h = c_int::try_from(self.height())?;
