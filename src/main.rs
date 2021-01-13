@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use std::os::unix::process::ExitStatusExt;
 use std::thread::sleep;
 
-use imgref::{ImgRef, ImgRefMut};
+use imgref::ImgRefMut;
 
 use rgb::{ComponentBytes, FromSlice};
 
