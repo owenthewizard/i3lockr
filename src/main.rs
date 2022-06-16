@@ -178,7 +178,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     conn.wait_for_reply(cookie).ok()
                 })
                 .enumerate()
-                .filter(|(i, m)| /* FIXME !m.mode().is_none() && */ !args.ignore.contains(i))
+                .filter(|(i, m)| !m.mode().is_none() && !args.ignore.contains(i))
                 .map(|(_, m)| {
                     (
                         usize::from(m.width()),
