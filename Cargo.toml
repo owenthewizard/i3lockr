@@ -41,7 +41,7 @@ version = "0.3"
 default-features = false
 
 [dependencies.xcb]
-version = "0.9"
+version = "1"
 features = ["randr", "shm"]
 
 [build-dependencies]

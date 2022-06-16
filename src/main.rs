@@ -29,6 +29,8 @@ use cli::Cli;
 use imagefmt::ColFmt;
 #[cfg(any(feature = "png", feature = "jpeg"))]
 use xcb::randr;
+#[cfg(any(feature = "png", feature = "jpeg"))]
+use xcb::Xid;
 
 #[cfg(feature = "scale")]
 mod scale;
@@ -160,19 +162,23 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .nth(screen_num as usize)
                 .unwrap_or_else(|| unreachable!());
 
-            let cookie = randr::get_screen_resources(&conn, screen.root());
-            let reply = cookie.get_reply()?;
+            let cookie = conn.send_request(&randr::GetScreenResources {
+                window: screen.root(),
+            });
+            let reply = conn.wait_for_reply(cookie)?;
 
             for (w, h, x, y) in reply
                 .crtcs()
                 .iter()
                 .filter_map(|crtc| {
-                    randr::get_crtc_info(&conn, *crtc, reply.timestamp())
-                        .get_reply()
-                        .ok()
+                    let cookie = conn.send_request(&randr::GetCrtcInfo {
+                        crtc: *crtc,
+                        config_timestamp: reply.timestamp(),
+                    });
+                    conn.wait_for_reply(cookie).ok()
                 })
                 .enumerate()
-                .filter(|(i, m)| m.mode() != 0 && !args.ignore.contains(i))
+                .filter(|(i, m)| /* FIXME !m.mode().is_none() && */ !args.ignore.contains(i))
                 .map(|(_, m)| {
                     (
                         usize::from(m.width()),
