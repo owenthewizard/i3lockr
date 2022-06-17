@@ -48,7 +48,6 @@ mod tests {
         ];
         let mut img = ImgRefMut::new(data.as_mut(), 4, 4);
         unsafe { img.scale_down(NonZeroUsize::new(2).unwrap()) };
-        dbg!(img.buf());
         assert_eq!(img.buf()[..2], [RED, RED]);
         assert_eq!(img.buf()[4..6], [BLUE, BLUE]);
         unsafe { img.scale_up(NonZeroUsize::new(2).unwrap()) };
