@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Things that are `unsafe` are now marked `unsafe`.
 - Structures are more general, less hardcoded, and easier to understand.
 - More modularity.
+- 100% Rust blur routine
 
 ## [1.1.0] - 2020-02-10
 ### Changed
