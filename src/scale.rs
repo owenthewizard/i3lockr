@@ -16,7 +16,7 @@ impl<T: Copy> Scale for ImgRefMut<'_, T> {
         let (w, h) = (self.width(), self.height());
         for (y, x) in iproduct!(0..h / factor, 0..w / factor) {
             let i = y * factor * w + x * factor;
-            self.buf_mut().copy_within(i .. i + 1, y * w + x);
+            self.buf_mut().copy_within(i..=i, y * w + x);
         }
     }
 
@@ -25,7 +25,7 @@ impl<T: Copy> Scale for ImgRefMut<'_, T> {
         let (w, h) = (self.width_padded(), self.height_padded());
         for (y, x) in iproduct!((0..h).rev(), (0..w).rev()) {
             let i = y / factor * w + x / factor;
-            self.buf_mut().copy_within(i .. i + 1, y * w + x);
+            self.buf_mut().copy_within(i..=i, y * w + x);
         }
     }
 }
