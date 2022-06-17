@@ -35,6 +35,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
+name = "blend-srgb"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8a187f5213b0a15f4344b1850bf1bd1f5cbe98eaf61d9914406723a9a2e6426"
+
+[[package]]
 name = "block"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -164,6 +170,7 @@ dependencies = [
  "rayon",
  "rgb",
  "scrap",
+ "stackblur-iter",
  "structopt",
  "xcb",
 ]
@@ -337,6 +344,16 @@ dependencies = [
  "cfg-if",
  "libc",
  "winapi",
+]
+
+[[package]]
+name = "stackblur-iter"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab09786b00d4c070a606d44898ad8388ec28ad47ada5b12a86c3efed3bd5df1d"
+dependencies = [
+ "blend-srgb",
+ "imgref",
 ]
 
 [[package]]

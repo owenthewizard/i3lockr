@@ -114,8 +114,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut screenshot = ImgRefMut::new(buf_bgra, w, h);
     timer_time!("Converting image", convert);
 
-    // blur is unsafe
-    // TODO: bubble errors
+    // scaling is unsafe
     unsafe {
         time_routine!(
             screenshot,

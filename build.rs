@@ -1,5 +1,4 @@
 use std::env;
-use std::path::Path;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -7,14 +6,6 @@ include!("src/cli/mod.rs");
 use structopt::clap::Shell;
 
 fn main() {
-    // Build C code for stackblur and statically link
-    let c_src = Path::new("src").join("C");
-    cc::Build::new()
-        .file(c_src.join("stackblur.c"))
-        .include(c_src)
-        .compile("stackblur");
-    //
-
     // Export build target, build time, and git commit
     println!(
         "cargo:rustc-env=TARGET={}",

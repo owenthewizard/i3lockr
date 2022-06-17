@@ -36,6 +36,11 @@ optional = true
 [dependencies.scrap]
 path = "crates/scrap"
 
+[dependencies.stackblur-iter]
+version = "0.1"
+optional = true
+features = ["blend-srgb"]
+
 [dependencies.structopt]
 version = "0.3"
 default-features = false
@@ -54,7 +59,7 @@ color = ["structopt/color"]
 png = ["imagefmt/png"]
 jpeg = ["imagefmt/jpeg"]
 threads = ["rayon"]
-blur = []
+blur = ["stackblur-iter"]
 scale = []
 brightness = []
 verbose = []
