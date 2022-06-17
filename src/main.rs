@@ -102,8 +102,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 if e.kind() == WouldBlock {
                     sleep(Duration::from_millis(33));
                     continue;
-                } else {
-                    return Err(e.into());
                 }
             }
         }
@@ -293,7 +291,7 @@ fn status_to_result(status: ExitStatus) -> Result<(), Box<dyn Error>> {
 
 // credit: @williewillus#8490
 #[cfg(any(feature = "png", feature = "jpeg"))]
-fn wrap_to_screen(idx: isize, len: usize) -> usize {
+const fn wrap_to_screen(idx: isize, len: usize) -> usize {
     if idx.is_negative() {
         let pos = -idx as usize % len;
         if pos == 0 {
