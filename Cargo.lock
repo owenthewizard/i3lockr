@@ -161,7 +161,6 @@ dependencies = [
 name = "i3lockr"
 version = "1.1.0"
 dependencies = [
- "cc",
  "imagefmt",
  "imgref",
  "itertools",
