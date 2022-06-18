@@ -224,9 +224,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         #[cfg(not(any(feature = "png", feature = "jpeg")))]
         warn_disabled!("png/jpeg overlay");
     } else if args.invert {
-        timer_start!(invert);
-        screenshot.invert(None, 0, 0);
-        timer_time!("Inverting image", invert);
+        #[cfg(any(feature = "png", feature = "jpeg"))]
+        {
+            timer_start!(invert);
+            screenshot.invert(None, 0, 0);
+            timer_time!("Inverting image", invert);
+        }
+        #[cfg(not(any(feature = "png", feature = "jpeg")))]
+        warn_disabled!("invert");
     }
 
     //TODO draw text
