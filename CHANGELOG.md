@@ -4,12 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unrelease]
+## [Unreleased]
+### Fixed
+- Missing some `unsafe` keywords.
+
 ### Changed
-- Things that are `unsafe` are now marked `unsafe`.
-- Structures are more general, less hardcoded, and easier to understand.
-- More modularity.
-- 100% Rust blur routine
+- Arguments take `NonZero` types where appropriate.
+- Image operations have been broken out into separate units.
+- Make use of [imgref](https://crates.io/crates/imgref) instead of custom structures.
+- 100% Rust blur routine using [stackblur-iter](https://github.com/LoganDark/stackblur-iter)
 
 ## [1.1.0] - 2020-02-10
 ### Changed
