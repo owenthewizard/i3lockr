@@ -6,7 +6,7 @@ use imgref::ImgRefMut;
 use rayon::prelude::*;
 
 use rgb::alt::BGRA8;
-use rgb::{ColorComponentMap, ComponentSlice};
+use rgb::ColorComponentMap;
 
 pub trait BrightnessAdj {
     fn brighten(&mut self, amt: NonZeroU8);
