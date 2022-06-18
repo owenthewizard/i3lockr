@@ -30,7 +30,7 @@ pub struct Cli {
 
     /// Blur strength. Example: 10
     #[structopt(short = "b", long = "blur", alias = "rad")]
-    pub radius: Option<NonZeroU8>,
+    pub radius: Option<NonZeroUsize>,
 
     /// Scale factor. Increases blur strength by a factor of this. Example: 2
     #[structopt(short = "p", long = "scale")]
