@@ -37,6 +37,8 @@ optional = true
 path = "crates/scrap"
 
 [dependencies.stackblur-iter]
+git = "https://github.com/LoganDark/stackblur-iter.git"
+branch = "rayon"
 version = "0.1"
 optional = true
 features = ["blend-srgb"]
@@ -57,7 +59,7 @@ suggestions = ["structopt/suggestions"]
 color = ["structopt/color"]
 png = ["imagefmt/png"]
 jpeg = ["imagefmt/jpeg"]
-threads = ["rayon"]
+threads = ["rayon", "stackblur-iter/rayon"]
 blur = ["stackblur-iter"]
 scale = []
 brightness = []

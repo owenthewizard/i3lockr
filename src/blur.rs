@@ -5,6 +5,9 @@ use imgref::ImgRefMut;
 use rgb::alt::BGRA8;
 use rgb::ComponentSlice;
 
+#[cfg(feature = "threads")]
+use stackblur_iter::par_blur_srgb as blur_srgb;
+#[cfg(not(feature = "threads"))]
 use stackblur_iter::blur_srgb;
 
 pub trait Blur {
