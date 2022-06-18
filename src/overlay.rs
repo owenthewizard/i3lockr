@@ -19,6 +19,7 @@ pub trait Compose {
 impl Compose for ImgRefMut<'_, BGRA8> {
     fn compose(&mut self, top: ImgRef<BGRA8>, x: usize, y: usize) {
         let mut bot = self.sub_image_mut(x, y, top.width(), top.height());
+
         #[cfg(not(feature = "threads"))]
         for (bot_px, top_px) in bot
             .pixels_mut()
@@ -36,6 +37,7 @@ impl Compose for ImgRefMut<'_, BGRA8> {
                 *bot_px = BGRA8 { b, g, r, a: 255 };
             }
         }
+
         // in the general case top will be pretty small
         // consider the overhead of multithreading might not be worth it
         #[cfg(feature = "threads")]
@@ -65,6 +67,7 @@ impl Compose for ImgRefMut<'_, BGRA8> {
     fn invert(&mut self, mask: Option<ImgRef<BGRA8>>, x: usize, y: usize) {
         if let Some(m) = mask {
             let mut view = self.sub_image_mut(x, y, m.width(), m.height());
+
             #[cfg(not(feature = "threads"))]
             for (view_px, _) in view
                 .pixels_mut()
@@ -73,6 +76,7 @@ impl Compose for ImgRefMut<'_, BGRA8> {
             {
                 *view_px = view_px.map_c(|c| !c);
             }
+
             #[cfg(feature = "threads")]
             view.rows_mut()
                 .zip(m.rows())
@@ -90,6 +94,7 @@ impl Compose for ImgRefMut<'_, BGRA8> {
             for pixel in self.pixels_mut() {
                 *pixel = pixel.map_c(|c| !c);
             }
+
             #[cfg(feature = "threads")]
             self.rows_mut().par_bridge().for_each(|r| {
                 for pixel in r.iter_mut() {
