@@ -6,6 +6,8 @@ use imgref::ImgRefMut;
 use rgb::alt::BGRA8;
 use rgb::ColorComponentMap;
 
+const MASK_THRESHOLD: u8 = 127;
+
 pub trait Compose {
     fn compose(&mut self, top: ImgRef<BGRA8>, x: usize, y: usize);
     fn invert(&mut self, mask: Option<ImgRef<BGRA8>>, x: usize, y: usize);
@@ -13,16 +15,21 @@ pub trait Compose {
 
 impl Compose for ImgRefMut<'_, BGRA8> {
     fn compose(&mut self, top: ImgRef<BGRA8>, x: usize, y: usize) {
-        let mut view = self.sub_image_mut(x, y, top.width(), top.height());
-        // as below, doing this as rows so padding isn't included
-        for (bot_row, top_row) in view.rows_mut().zip(top.rows()) {
-            for (bot_pixel, top_pixel) in bot_row.iter_mut().zip(top_row.iter()) {
+        let mut bot = self.sub_image_mut(x, y, top.width(), top.height());
+        for (bot_px, top_px) in bot
+            .pixels_mut()
+            .zip(top.pixels())
+            .filter(|(_, top_px)| top_px.a > 0)
+        {
+            if top_px.a == 255 {
+                *bot_px = top_px;
+            } else {
                 let (b, g, r) = blend_srgb8(
-                    (bot_pixel.b, bot_pixel.g, bot_pixel.r),
-                    (top_pixel.b, top_pixel.g, top_pixel.r),
-                    top_pixel.a,
+                    (bot_px.b, bot_px.g, bot_px.r),
+                    (top_px.b, top_px.g, top_px.r),
+                    top_px.a,
                 );
-                *bot_pixel = BGRA8 { b, g, r, a: 255 };
+                *bot_px = BGRA8 { b, g, r, a: 255 };
             }
         }
     }
@@ -30,17 +37,16 @@ impl Compose for ImgRefMut<'_, BGRA8> {
     fn invert(&mut self, mask: Option<ImgRef<BGRA8>>, x: usize, y: usize) {
         if let Some(m) = mask {
             let mut view = self.sub_image_mut(x, y, m.width(), m.height());
-            // if we don't do this as rows padding is included
-            for (view_row, mask_row) in view.rows_mut().zip(m.rows()) {
-                for (view_pixel, mask_pixel) in view_row.iter_mut().zip(mask_row.iter()) {
-                    if mask_pixel.a > 127 {
-                        *view_pixel = view_pixel.map_c(|c| !c);
-                    }
-                }
+            for (view_px, _) in view
+                .pixels_mut()
+                .zip(m.pixels())
+                .filter(|(_, mask_px)| mask_px.a > MASK_THRESHOLD)
+            {
+                *view_px = view_px.map_c(|c| !c);
             }
         } else {
-            for pixel in self.buf_mut().iter_mut() {
-                *pixel = pixel.map_c(|c| !c)
+            for pixel in self.pixels_mut() {
+                *pixel = pixel.map_c(|c| !c);
             }
         }
     }
