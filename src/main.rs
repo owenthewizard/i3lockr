@@ -141,14 +141,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         #[cfg(any(feature = "png", feature = "jpeg"))]
         {
             timer_start!(decode);
-            let mut image = imagefmt::read(path, ColFmt::BGRA)?;
-            // imagefmt and imgref disagree about what alpha is
-            image
-                .buf
-                .iter_mut()
-                .skip(3)
-                .step_by(4)
-                .for_each(|x| *x = !*x);
+            let image = imagefmt::read(path, ColFmt::BGRA)?;
             let image = imgref::ImgRef::new(image.buf.as_bgra(), image.w, image.h);
             timer_time!("Decoding overlay image", decode);
 

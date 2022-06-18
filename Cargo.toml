@@ -24,6 +24,10 @@ libc = "0.2" # should be same as xcb
 num_cpus = "1"
 rgb = "0.8"
 
+[dependencies.blend-srgb]
+version = "0.1"
+optional = true
+
 [dependencies.imagefmt]
 version = "4"
 default-features = false
@@ -57,8 +61,8 @@ structopt = { version = "0.3", default-features = false }
 [features]
 suggestions = ["structopt/suggestions"]
 color = ["structopt/color"]
-png = ["imagefmt/png"]
-jpeg = ["imagefmt/jpeg"]
+png = ["imagefmt/png", "blend-srgb"]
+jpeg = ["imagefmt/jpeg", "blend-srgb"]
 threads = ["rayon", "stackblur-iter/rayon"]
 blur = ["stackblur-iter"]
 scale = []

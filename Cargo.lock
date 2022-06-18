@@ -161,6 +161,7 @@ dependencies = [
 name = "i3lockr"
 version = "1.1.0"
 dependencies = [
+ "blend-srgb",
  "imagefmt",
  "imgref",
  "itertools",
