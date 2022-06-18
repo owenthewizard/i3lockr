@@ -14,35 +14,31 @@ pub trait BrightnessAdj {
 }
 
 impl BrightnessAdj for ImgRefMut<'_, BGRA8> {
-    #[cfg(feature = "threads")]
     fn brighten(&mut self, amt: NonZeroU8) {
-        // need to access buffer manually because imgref doesn't support rayon
-        self.buf_mut().par_iter_mut().for_each(|pixel| {
+        #[cfg(not(feature = "threads"))]
+        for pixel in self.pixels_mut() {
             *pixel = pixel.map_c(|c| c.saturating_add(amt.get()));
+        }
+
+        #[cfg(feature = "threads")]
+        self.rows_mut().par_bridge().for_each(|row| {
+            for pixel in row.iter_mut() {
+                *pixel = pixel.map_c(|c| c.saturating_add(amt.get()));
+            }
         });
     }
 
-    #[cfg(not(feature = "threads"))]
-    fn brighten(&mut self, amt: NonZeroU8) {
-        // need to access buffer manually because imgref doesn't support rayon
-        self.buf_mut().iter_mut().for_each(|pixel| {
-            *pixel = pixel.map_c(|c| c.saturating_add(amt.get()));
-        });
-    }
-
-    #[cfg(feature = "threads")]
     fn darken(&mut self, amt: NonZeroU8) {
-        // need to access buffer manually because imgref doesn't support rayon
-        self.buf_mut().par_iter_mut().for_each(|pixel| {
+        #[cfg(not(feature = "threads"))]
+        for pixel in self.pixels_mut() {
             *pixel = pixel.map_c(|c| c.saturating_sub(amt.get()));
-        });
-    }
+        }
 
-    #[cfg(not(feature = "threads"))]
-    fn darken(&mut self, amt: NonZeroU8) {
-        // need to access buffer manually because imgref doesn't support rayon
-        self.buf_mut().iter_mut().for_each(|pixel| {
-            *pixel = pixel.map_c(|c| c.saturating_sub(amt.get()));
+        #[cfg(feature = "threads")]
+        self.rows_mut().par_bridge().for_each(|row| {
+            for pixel in row.iter_mut() {
+                *pixel = pixel.map_c(|c| c.saturating_sub(amt.get()));
+            }
         });
     }
 }
