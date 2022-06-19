@@ -1,3 +1,0 @@
-[submodule "crates/scrap"]
-	path = crates/scrap
-	url = https://github.com/owenthewizard/scrap.git

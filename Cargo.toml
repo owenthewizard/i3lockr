@@ -1,14 +1,14 @@
 [package]
 name = "i3lockr"
 description = "Distort a screenshot and run i3lock"
-version = "1.1.0"
+version = "1.2.0"
 license = "MIT OR Apache-2.0"
 authors = ["Owen Walpole <owenthewizard@hotmail.com>"]
 repository = "https://github.com/owenthewizard/i3lockr"
 readme = "README.md"
 keywords = ["i3lockr", "i3lock", "i3lock-fancy", "blur", "i3lock-color" ]
 categories = ["command-line-utilities", "multimedia::images"]
-edition = "2018"
+edition = "2021"
 
 [badges]
 is-it-maintained-issue-resolution = { repository = "owenthewizard/i3lockr" }
@@ -18,42 +18,18 @@ maintenance = { status = "actively-developed" }
 
 
 [dependencies]
+blend-srgb = { version = "0.1", optional = true }
+imagefmt = { version = "4", default-features = false, optional = true }
 imgref = "1"
 itertools = "0.10"
 libc = "0.2" # should be same as xcb
 num_cpus = "1"
+rayon = { version = "1", optional = true }
 rgb = "0.8"
-
-[dependencies.blend-srgb]
-version = "0.1"
-optional = true
-
-[dependencies.imagefmt]
-version = "4"
-default-features = false
-optional = true
-
-[dependencies.rayon]
-version = "1"
-optional = true
-
-[dependencies.scrap]
-path = "crates/scrap"
-
-[dependencies.stackblur-iter]
-git = "https://github.com/LoganDark/stackblur-iter.git"
-branch = "rayon"
-version = "0.1"
-optional = true
-features = ["blend-srgb"]
-
-[dependencies.structopt]
-version = "0.3"
-default-features = false
-
-[dependencies.xcb]
-version = "1"
-features = ["randr", "shm"]
+scrap = { git = "https://github.com/owenthewizard/scrap" }
+stackblur-iter = { git = "https://github.com/LoganDark/stackblur-iter", branch = "rayon", optional = true, features = ["blend-srgb"] }
+structopt = { version = "0.3", default-features = false }
+xcb = { version = "1", features = ["randr", "shm"] }
 
 [build-dependencies]
 structopt = { version = "0.3", default-features = false }
@@ -61,10 +37,10 @@ structopt = { version = "0.3", default-features = false }
 [features]
 suggestions = ["structopt/suggestions"]
 color = ["structopt/color"]
-png = ["imagefmt/png", "blend-srgb"]
-jpeg = ["imagefmt/jpeg", "blend-srgb"]
-threads = ["rayon", "stackblur-iter/rayon"]
-blur = ["stackblur-iter"]
+png = ["imagefmt/png", "dep:blend-srgb"]
+jpeg = ["imagefmt/jpeg", "dep:blend-srgb"]
+threads = ["dep:rayon", "stackblur-iter?/rayon"]
+blur = ["dep:stackblur-iter"]
 scale = []
 brightness = []
 verbose = []

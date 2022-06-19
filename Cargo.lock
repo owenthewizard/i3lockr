@@ -159,7 +159,7 @@ dependencies = [
 
 [[package]]
 name = "i3lockr"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "blend-srgb",
  "imagefmt",
@@ -305,9 +305,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.18"
+version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1feb54ed693b93a84e14094943b84b7c4eae204c512b7ccb95ab0c66d278ad1"
+checksum = "f53dc8cf16a769a6f677e09e7ff2cd4be1ea0f48754aac39520536962011de0d"
 dependencies = [
  "proc-macro2",
 ]
@@ -338,9 +338,9 @@ dependencies = [
 
 [[package]]
 name = "rgb"
-version = "0.8.32"
+version = "0.8.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e74fdc210d8f24a7dbfedc13b04ba5764f5232754ccebfdf5fff1bad791ccbc6"
+checksum = "c3b221de559e4a29df3b957eec92bc0de6bc8eaf6ca9cfed43e5e1d67ff65a34"
 dependencies = [
  "bytemuck",
 ]
@@ -354,6 +354,7 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 [[package]]
 name = "scrap"
 version = "0.6.0-owenthewizard"
+source = "git+https://github.com/owenthewizard/scrap#21b9f233bb8ad0b650b8eabb8a796054538c64be"
 dependencies = [
  "block",
  "cfg-if",
@@ -364,7 +365,7 @@ dependencies = [
 [[package]]
 name = "stackblur-iter"
 version = "0.1.3"
-source = "git+https://github.com/LoganDark/stackblur-iter.git?branch=rayon#7996893e6ef980a5fd4dce65d4b74c42c7dbf4b7"
+source = "git+https://github.com/LoganDark/stackblur-iter?branch=rayon#7996893e6ef980a5fd4dce65d4b74c42c7dbf4b7"
 dependencies = [
  "blend-srgb",
  "imgref",
@@ -405,9 +406,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.96"
+version = "1.0.98"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0748dd251e24453cb8717f0354206b91557e4ec8703673a4b30208f2abaf1ebf"
+checksum = "c50aef8a904de4c23c788f104b7dddc7d6f79c647c7c8ce4cc8f73eb0ca773dd"
 dependencies = [
  "proc-macro2",
  "quote",

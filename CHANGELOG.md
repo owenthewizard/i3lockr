@@ -4,15 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2022-06-18
 ### Fixed
 - Missing some `unsafe` keywords.
+- Security issues in dependencies.
 
 ### Changed
+- Screenshot is now captured with [scrap](https://github.com/owenthewizard/scrap).
 - Arguments take `NonZero` types where appropriate.
 - Image operations have been broken out into separate units.
 - Make use of [imgref](https://crates.io/crates/imgref) instead of custom structures.
-- 100% Rust blur routine using [stackblur-iter](https://github.com/LoganDark/stackblur-iter)
+- Make use of [blend-srgb](https://crates.io/crates/blend-srgb) instead of manual blending.
+- 100% Rust blur routine using [stackblur-iter](https://github.com/LoganDark/stackblur-iter) (resolves #13)
 
 ## [1.1.0] - 2020-02-10
 ### Changed
