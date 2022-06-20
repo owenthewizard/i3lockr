@@ -17,6 +17,9 @@ impl<T: Copy> Scale for ImgRefMut<'_, T> {
         for (y, x) in iproduct!(0..h / factor, 0..w / factor) {
             let dst = y * factor * w + x * factor;
             let src = y * w + x;
+            // swap is faster than copy in my testing
+            // for our purposes the data outside the scaled-down image is undefined
+            // so it doesn't matter if it's a swap or copy
             self.buf_mut().swap(dst, src);
         }
     }
