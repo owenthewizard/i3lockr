@@ -10,26 +10,29 @@ pub trait Scale {
     unsafe fn scale_down(&mut self, factor: NonZeroUsize);
 }
 
-impl<T: Copy> Scale for ImgRefMut<'_, T> {
+impl<T: Copy + Default> Scale for ImgRefMut<'_, T> {
     unsafe fn scale_down(&mut self, factor: NonZeroUsize) {
         let factor = factor.get();
         let (w, h) = (self.width(), self.height());
+        let buf = self.buf_mut();
         for (y, x) in iproduct!(0..h / factor, 0..w / factor) {
-            let dst = y * factor * w + x * factor;
-            let src = y * w + x;
-            // swap is faster than copy in my testing
-            // for our purposes the data outside the scaled-down image is undefined
-            // so it doesn't matter if it's a swap or copy
-            self.buf_mut().swap(dst, src);
+            // we don't care what is left behind outside of our scaled image
+            // take > swap > copy
+            // in terms of speed
+            let px = buf.get_unchecked_mut(y * factor * w + x * factor);
+            let val = std::mem::take(px);
+            let scaled_px = buf.get_unchecked_mut(y * w + x);
+            *scaled_px = val;
         }
     }
 
     unsafe fn scale_up(&mut self, factor: NonZeroUsize) {
         let factor = factor.get();
         let (w, h) = (self.width_padded(), self.height_padded());
+        let buf = self.buf_mut();
         for (y, x) in iproduct!((0..h).rev(), (0..w).rev()) {
             let i = y / factor * w + x / factor;
-            self.buf_mut().copy_within(i..=i, y * w + x);
+            buf.copy_within(i..=i, y * w + x);
         }
     }
 }
