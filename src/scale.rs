@@ -1,6 +1,5 @@
 use std::num::NonZeroUsize;
 
-use imgref::ImgExt;
 use imgref::ImgRefMut;
 
 use itertools::iproduct;
@@ -28,11 +27,12 @@ impl<T: Copy + Default> Scale for ImgRefMut<'_, T> {
 
     unsafe fn scale_up(&mut self, factor: NonZeroUsize) {
         let factor = factor.get();
-        let (w, h) = (self.width_padded(), self.height_padded());
+        let (w, h) = (self.width(), self.height());
         let buf = self.buf_mut();
         for (y, x) in iproduct!((0..h).rev(), (0..w).rev()) {
-            let i = y / factor * w + x / factor;
-            buf.copy_within(i..=i, y * w + x);
+            let px = *buf.get_unchecked(y / factor * w + x / factor);
+            let scaled_px = buf.get_unchecked_mut(y * w + x);
+            *scaled_px = px;
         }
     }
 }
