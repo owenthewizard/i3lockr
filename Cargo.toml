@@ -21,7 +21,7 @@ maintenance = { status = "actively-developed" }
 blend-srgb = { version = "0.1", optional = true }
 imagefmt = { version = "4", default-features = false, optional = true }
 imgref = "1"
-itertools = "0.10"
+itertools = { version = "0.10", optional = true }
 libc = "0.2" # should be same as xcb
 num_cpus = "1"
 rayon = { version = "1", optional = true }
@@ -41,7 +41,7 @@ png = ["imagefmt/png", "dep:blend-srgb"]
 jpeg = ["imagefmt/jpeg", "dep:blend-srgb"]
 threads = ["dep:rayon", "stackblur-iter?/rayon"]
 blur = ["dep:stackblur-iter"]
-scale = []
+scale = ["dep:itertools"]
 brightness = []
 verbose = []
 default = ["suggestions", "color", "png", "jpeg", "threads", "blur", "scale", "brightness"]
