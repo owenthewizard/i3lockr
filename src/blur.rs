@@ -26,6 +26,6 @@ impl Blur for ImgRefMut<'_, BGRA8> {
         #[cfg(not(feature = "simd"))]
         blur_srgb(&mut img, radius.get());
         #[cfg(feature = "simd")]
-        blur_srgb::<32>(&mut img, radius.get());
+        blur_srgb::<8>(&mut img, radius.get());
     }
 }
