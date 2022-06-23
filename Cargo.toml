@@ -27,7 +27,7 @@ num_cpus = "1"
 rayon = { version = "1", optional = true }
 rgb = "0.8"
 scrap = { git = "https://github.com/owenthewizard/scrap" }
-stackblur-iter = { git = "https://github.com/LoganDark/stackblur-iter", branch = "rayon", optional = true, features = ["blend-srgb"] }
+stackblur-iter = { git = "https://github.com/LoganDark/stackblur-iter", branch = "rayon-simd", optional = true, features = ["blend-srgb"] }
 structopt = { version = "0.3", default-features = false }
 xcb = { version = "1", features = ["randr", "shm"] }
 
@@ -40,11 +40,12 @@ color = ["structopt/color"]
 png = ["imagefmt/png", "dep:blend-srgb"]
 jpeg = ["imagefmt/jpeg", "dep:blend-srgb"]
 threads = ["dep:rayon", "stackblur-iter?/rayon"]
+simd = ["stackblur-iter?/simd"]
 blur = ["dep:stackblur-iter"]
 scale = ["dep:itertools"]
 brightness = []
 verbose = []
-default = ["suggestions", "color", "png", "jpeg", "threads", "blur", "scale", "brightness"]
+default = ["suggestions", "color", "png", "jpeg", "threads", "simd", "blur", "scale", "brightness"]
 
 [profile.release]
 lto = true

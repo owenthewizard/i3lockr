@@ -192,9 +192,9 @@ checksum = "7d6a8cd48d0dc604999b8beacfbfc2f4eb289a52af175029d4f79fb57b80c7d5"
 
 [[package]]
 name = "imgref-iter"
-version = "0.2.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02ecae73909e30c754e98c5fa7f87bd72f0fe09ddad5970a11ad219758afb6bf"
+checksum = "0ea8f10517b40371c083905529dd36ec018b66983bfbf5c5bc49badf8990e088"
 dependencies = [
  "imgref",
 ]
@@ -365,7 +365,7 @@ dependencies = [
 [[package]]
 name = "stackblur-iter"
 version = "0.1.3"
-source = "git+https://github.com/LoganDark/stackblur-iter?branch=rayon#7996893e6ef980a5fd4dce65d4b74c42c7dbf4b7"
+source = "git+https://github.com/LoganDark/stackblur-iter?branch=rayon-simd#9c5cbf57c5c14f5073017c16d9fe2440b71e33dc"
 dependencies = [
  "blend-srgb",
  "imgref",
