@@ -16,6 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install xcb
+      run: sudo apt install -y  libxcb1-dev libxcb-randr0-dev  libxcb-shm0-dev
     - name: Build
       run: cargo build --verbose
     - name: Run tests
