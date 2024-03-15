@@ -1,7 +1,7 @@
 [package]
 name = "i3lockr"
 description = "Distort a screenshot and run i3lock"
-version = "1.2.0"
+version = "1.2.1"
 license = "MIT OR Apache-2.0"
 authors = ["Owen Walpole <owenthewizard@hotmail.com>"]
 repository = "https://github.com/owenthewizard/i3lockr"
@@ -21,7 +21,7 @@ maintenance = { status = "actively-developed" }
 blend-srgb = { version = "0.1", optional = true }
 imagefmt = { version = "4", default-features = false, optional = true }
 imgref = "1"
-itertools = { version = "0.10", optional = true }
+itertools = { version = "0.12", optional = true }
 libc = "0.2" # should be same as xcb
 num_cpus = "1"
 rayon = { version = "1", optional = true }
@@ -47,5 +47,6 @@ verbose = []
 default = ["suggestions", "color", "png", "jpeg", "threads", "blur", "scale", "brightness"]
 
 [profile.release]
-lto = true
+lto = "fat"
 codegen-units = 1
+strip = true
