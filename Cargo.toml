@@ -1,21 +1,13 @@
 [package]
 name = "i3lockr"
-description = "Distort a screenshot and run i3lock"
 version = "1.2.1"
-license = "MIT OR Apache-2.0"
-authors = ["Owen Walpole <owenthewizard@hotmail.com>"]
+authors = ["Owen Walpole <owen@walpole.dev>"]
+edition = "2021"
+description = "Distort a screenshot and run i3lock"
 repository = "https://github.com/owenthewizard/i3lockr"
-readme = "README.md"
+license = "MIT OR Apache-2.0"
 keywords = ["i3lockr", "i3lock", "i3lock-fancy", "blur", "i3lock-color" ]
 categories = ["command-line-utilities", "multimedia::images"]
-edition = "2021"
-
-[badges]
-is-it-maintained-issue-resolution = { repository = "owenthewizard/i3lockr" }
-is-it-maintained-open-issues = { repository = "owenthewizard/i3lockr" }
-
-maintenance = { status = "actively-developed" }
-
 
 [dependencies]
 blend-srgb = { version = "0.1", optional = true }
