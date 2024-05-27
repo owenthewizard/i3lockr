@@ -1,0 +1,54 @@
+#compdef i3lockr
+
+autoload -U is-at-least
+
+_i3lockr() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" \
+'(--brighten)--darken=[Darken the screenshot by \[1, 255\]. Example\: 15]:DARK: ' \
+'(--brighten)--dark=[Darken the screenshot by \[1, 255\]. Example\: 15]:DARK: ' \
+'--brighten=[Brighten the screenshot by \[1, 255\]. Example\: 15]:BRIGHT: ' \
+'--bright=[Brighten the screenshot by \[1, 255\]. Example\: 15]:BRIGHT: ' \
+'-b+[Blur strength. Example\: 10]:RADIUS: ' \
+'--blur=[Blur strength. Example\: 10]:RADIUS: ' \
+'-p+[Scale factor. Increases blur strength by a factor of this. Example\: 2]:FACTOR: ' \
+'--scale=[Scale factor. Increases blur strength by a factor of this. Example\: 2]:FACTOR: ' \
+'*--ignore-monitors=[Don'\''t overlay an icon on these monitors. Useful if you'\''re mirroring displays. Must be comma separated. Example\: 0,2]:0,2: ' \
+'*--ignore=[Don'\''t overlay an icon on these monitors. Useful if you'\''re mirroring displays. Must be comma separated. Example\: 0,2]:0,2: ' \
+'-u+[Icon placement, "x,y" (from top-left), or "-x,-y" (from bottom-right). Has no effect without --icon. Must be comma separated. Defaults to center if not specified. Example\: "945,-20"]:x,y: ' \
+'--position=[Icon placement, "x,y" (from top-left), or "-x,-y" (from bottom-right). Has no effect without --icon. Must be comma separated. Defaults to center if not specified. Example\: "945,-20"]:x,y: ' \
+'--pos=[Icon placement, "x,y" (from top-left), or "-x,-y" (from bottom-right). Has no effect without --icon. Must be comma separated. Defaults to center if not specified. Example\: "945,-20"]:x,y: ' \
+'-i+[Path to icon to overlay on screenshot]:lock.png:_files' \
+'--icon=[Path to icon to overlay on screenshot]:lock.png:_files' \
+'-v[Print how long each step takes, among other things. Always enabled in debug builds]' \
+'--verbose[Print how long each step takes, among other things. Always enabled in debug builds]' \
+'--invert[Interpret the icon as a mask, inverting masked pixels on the screenshot. Try it to see an example]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+'*::i3lock -- Arguments to pass to i3lock. Example\: "--nofork --ignore-empty-password":' \
+&& ret=0
+}
+
+(( $+functions[_i3lockr_commands] )) ||
+_i3lockr_commands() {
+    local commands; commands=()
+    _describe -t commands 'i3lockr commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_i3lockr" ]; then
+    _i3lockr "$@"
+else
+    compdef _i3lockr i3lockr
+fi
