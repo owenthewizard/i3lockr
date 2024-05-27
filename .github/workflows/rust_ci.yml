@@ -36,7 +36,7 @@ jobs:
       - name: Upload i3lockr Debug
         uses: actions/upload-artifact@v4
         with:
-          name: i3lockr
+          name: i3lockr-debug
           path: target/debug/i3lockr
           if-no-files-found: ignore
           overwrite: true
