@@ -36,7 +36,7 @@ jobs:
       - name: Run Command
         run: cargo ${{ matrix.action.command }} ${{ matrix.action.args }}
       - name: Configure GPG Key
-        run: echo -n "$GPG_SIGNING_KEY" | base64 --decode --ignore-garbage | gpg --batch --allow-secret-key-import --import
+        run: echo -n "$GPG_SIGNING_KEY" | gpg --batch --allow-secret-key-import --import
         env:
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
       - name: Sign Release
