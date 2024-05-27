@@ -7,11 +7,11 @@ include!("src/cli.rs");
 
 fn main() -> Result<(), io::Error> {
     let outdir = "shell-completions";
-    fs::create_dir_all(&outdir)?;
+    fs::create_dir_all(outdir)?;
 
     let mut cmd = Cli::command();
     for &shell in Shell::value_variants() {
-        generate_to(shell, &mut cmd, env!("CARGO_PKG_NAME"), &outdir)?;
+        generate_to(shell, &mut cmd, env!("CARGO_PKG_NAME"), outdir)?;
     }
 
     Ok(())
