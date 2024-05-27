@@ -1,0 +1,36 @@
+name: Build Release
+
+on:
+  push:
+
+env:
+  CARGO_TERM_COLOR: always
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  rust-build:
+    if: startsWith(github.ref, 'refs/tags/')
+    name: Rust Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install XCB
+        run: sudo apt install -y libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev
+      - uses: actions/checkout@v4
+      - name: Enable Caching
+        uses: Swatinem/rust-cache@v2
+      - name: Cargo Build
+        run: cargo build --release
+      - name: Configure GPG Key
+        run: echo -n "$GPG_SIGNING_KEY" | gpg --batch --pinentry-mode loopback --allow-secret-key-import --import
+        env:
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+      - name: Sign Release
+        run: gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --detach-sign "$GITHUB_WORKSPACE/target/release/i3lockr"
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            $GITHUB_WORKSPACE/target/release/i3lockr
+            $GITHUB_WORKSPACE/target/release/i3lockr.sig
