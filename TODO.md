@@ -2,3 +2,4 @@
 - [] replace imagefmt
 - [] audit `unsafe`
 - [] implement proper logging (tracing)
+- [] cargo-aur

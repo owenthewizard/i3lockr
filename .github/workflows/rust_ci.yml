@@ -31,7 +31,13 @@ jobs:
       - name: Install XCB
         run: sudo apt install -y libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev
       - uses: actions/checkout@v4
-      - name: Enable caching
+      - name: Enable Caching
         uses: Swatinem/rust-cache@v2
-      - name: Run command
+      - name: Run Command
         run: cargo ${{ matrix.action.command }} ${{ matrix.action.args }}
+      - name: Configure GPG Key
+        run: echo -n "$GPG_SIGNING_KEY" | base64 --decode | gpg --batch --allow-secret-key-import --import
+        env:
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+      - name: Sign Release
+        run: gpg --batch --detach-sign "$GITHUB_WORKSPACE/target/release/i3lockr"
