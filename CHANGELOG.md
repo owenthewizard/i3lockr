@@ -1,8 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Changed
+- Update clap to v4
+- Update itertools to 0.13
+- Accept arguments for disabled features.
+  Previously, a runtime error was returned.
+
+### Added
+- Add clippy and fmt to CI
+
+### Removed
+- `suggestions` and `color` features
+- custom `--version` output
 
 ## [1.2.1] - 2024-03-15
 ## Changed

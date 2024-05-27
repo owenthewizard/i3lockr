@@ -16,11 +16,9 @@ macro_rules! timer_time {
 macro_rules! warn_disabled {
     ($s:expr) => {
         eprintln!(
-            "{}",
-            Format::Warning(format!(
-                "Feature \"{f}\" was not enabled at compile-time. Skipping {f}.",
-                f = $s
-            ))
+            // FIXME: format warning
+            "Feature \"{f}\" was not enabled at compile-time. Skipping {f}.",
+            f = $s
         );
     };
 }
@@ -41,10 +39,8 @@ macro_rules! time_routine {
         #[cfg(not(feature = $feat))]
         {
             eprintln!(
-                "{}",
-                Format::Warning(format!(
+                // FIXME: format warning
                         "Feature {} was not enabled at compile-time. Skipping {}.", stringify!($feat), stringify!($F)
-                ))
             );
         }
         }

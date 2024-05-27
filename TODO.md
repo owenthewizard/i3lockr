@@ -1,0 +1,4 @@
+- [x] update clap to v4
+- [] replace imagefmt
+- [] audit `unsafe`
+- [] implement proper logging (tracing)

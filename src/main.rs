@@ -9,14 +9,13 @@ use std::time::{Duration, Instant};
 use std::os::unix::process::ExitStatusExt;
 use std::thread::sleep;
 
+use clap::Parser;
+
 use imgref::ImgRefMut;
 
 use rgb::{ComponentBytes, FromSlice};
 
 use scrap::{Capturer, Display, Frame};
-
-use structopt::clap::Format;
-use structopt::StructOpt;
 
 use xcb::Connection;
 
@@ -55,19 +54,7 @@ use overlay::Compose;
 fn main() -> Result<(), Box<dyn Error>> {
     timer_start!(everything);
     // parse args, handle custom `--version`
-    let args = Cli::from_args();
-    if args.version {
-        eprintln!(
-            "{} v{} compiled for '{}' at {} ({}@{})",
-            env!("CARGO_PKG_NAME"),
-            env!("CARGO_PKG_VERSION"),
-            env!("TARGET"),
-            env!("TIME"),
-            env!("GIT_BRANCH"),
-            env!("GIT_COMMIT")
-        );
-        return Ok(());
-    }
+    let args = Cli::parse();
 
     // init debug macro
     macro_rules! debug {
@@ -178,14 +165,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                     )
                 })
             {
-                let (x_off, y_off) = if args.pos.is_empty() {
+                let (x_off, y_off) = if args.pos.is_none() {
                     if image.width() > w || image.height() > h {
                         eprintln!(
-                            "{}",
-                            Format::Warning(
-                                "Your image is larger than your monitor, image positions may be off!"
-                                )
-                            );
+                            // FIXME
+                            // warning formatting
+                            "Your image is larger than your monitor, image positions may be off!"
+                        );
                     }
                     (
                         w / 2 - image.width() / 2 + x,
@@ -194,8 +180,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 } else {
                     unsafe {
                         (
-                            wrap_to_screen(*args.pos.get_unchecked(0), w + x),
-                            wrap_to_screen(*args.pos.get_unchecked(1), h + y),
+                            wrap_to_screen(args.pos.unwrap_unchecked().0, w + x),
+                            wrap_to_screen(args.pos.unwrap_unchecked().1, h + y),
                         )
                     }
                 };
@@ -237,11 +223,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     // call i3lock
     debug!("Calling i3lock with args: {:?}", args.i3lock);
     let mut cmd = Command::new("i3lock")
-        .args(&[
+        .args([
             "-i",
             "/dev/stdin",
             //FIXME
-            &format!("--raw={}x{}:native", w, h),
+            // I don't remember what this fixme is for...
+            &format!("--raw={w}x{h}:native"),
         ])
         .args(args.i3lock)
         .stdin(Stdio::piped())
@@ -290,7 +277,7 @@ fn status_to_result(status: ExitStatus) -> Result<(), Box<dyn Error>> {
 #[cfg(any(feature = "png", feature = "jpeg"))]
 const fn wrap_to_screen(idx: isize, len: usize) -> usize {
     if idx.is_negative() {
-        let pos = -idx as usize % len;
+        let pos = idx.unsigned_abs() % len;
         if pos == 0 {
             0
         } else {

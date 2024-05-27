@@ -21,22 +21,21 @@ maintenance = { status = "actively-developed" }
 blend-srgb = { version = "0.1", optional = true }
 imagefmt = { version = "4", default-features = false, optional = true }
 imgref = "1"
-itertools = { version = "0.12", optional = true }
+itertools = { version = "0.13", optional = true }
 libc = "0.2" # should be same as xcb
 num_cpus = "1"
 rayon = { version = "1", optional = true }
 rgb = "0.8"
 scrap = { git = "https://github.com/owenthewizard/scrap" }
 stackblur-iter = { version = "0.2", optional = true, features = ["blend-srgb"] }
-structopt = { version = "0.3", default-features = false }
+clap = { version = "4", features = ["derive"] }
 xcb = { version = "1", features = ["randr", "shm"] }
 
 [build-dependencies]
-structopt = { version = "0.3", default-features = false }
+clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
 
 [features]
-suggestions = ["structopt/suggestions"]
-color = ["structopt/color"]
 png = ["imagefmt/png", "dep:blend-srgb"]
 jpeg = ["imagefmt/jpeg", "dep:blend-srgb"]
 threads = ["dep:rayon", "stackblur-iter?/rayon"]
@@ -44,7 +43,7 @@ blur = ["dep:stackblur-iter"]
 scale = ["dep:itertools"]
 brightness = []
 verbose = []
-default = ["suggestions", "color", "png", "jpeg", "threads", "blur", "scale", "brightness"]
+default = ["png", "jpeg", "threads", "blur", "scale", "brightness"]
 
 [profile.release]
 lto = "fat"
