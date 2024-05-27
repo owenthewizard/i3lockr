@@ -49,4 +49,6 @@ jobs:
         env:
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
       - name: Sign Release
-        run: gpg --batch --pinentry-mode loopback --detach-sign "$GITHUB_WORKSPACE/target/release/i3lockr"
+        run: gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --detach-sign "$GITHUB_WORKSPACE/target/release/i3lockr"
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
