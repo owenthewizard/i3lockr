@@ -20,13 +20,11 @@ jobs:
       matrix:
         action:
           - command: build
-            args: --color always
           - command: fmt
-            args: --all -- --check --color always
+            args: --all -- --check
           - command: clippy
             args: --all-features --workspace -- -D warnings
           - command: test
-            args: --color always
     steps:
       - name: Install XCB
         run: sudo apt install -y libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev
@@ -35,3 +33,38 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: Run Command
         run: cargo ${{ matrix.action.command }} ${{ matrix.action.args }}
+      - name: Upload i3lockr Debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3lockr
+          path: target/debug/i3lockr
+          if-no-files-found: ignore
+          overwrite: true
+  build-release:
+    if: startsWith(github.ref, 'refs/tags/')
+    name: Build and Release i3lockr
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install XCB
+        run: sudo apt install -y libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev
+      - uses: actions/checkout@v4
+      - name: Enable Caching
+        uses: Swatinem/rust-cache@v2
+      - name: Cargo Build
+        run: cargo build --release
+      - name: Configure GPG Key
+        run: echo -n "$GPG_SIGNING_KEY" | gpg --batch --pinentry-mode loopback --allow-secret-key-import --import
+        env:
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+      - name: Sign Release
+        run: gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --detach-sign "$GITHUB_WORKSPACE/target/release/i3lockr"
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          fail_on_unmatched_files: true
+          files: |
+            target/release/i3lockr
+            target/release/i3lockr.sig
