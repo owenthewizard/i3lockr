@@ -3,3 +3,4 @@
 - [ ] audit `unsafe`
 - [ ] implement proper logging (tracing)
 - [ ] cargo-aur
+- [ ] replace scrap
