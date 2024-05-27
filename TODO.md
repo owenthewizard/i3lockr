@@ -1,5 +1,5 @@
 - [x] update clap to v4
-- [] replace imagefmt
-- [] audit `unsafe`
-- [] implement proper logging (tracing)
-- [] cargo-aur
+- [ ] replace imagefmt
+- [ ] audit `unsafe`
+- [ ] implement proper logging (tracing)
+- [ ] cargo-aur
