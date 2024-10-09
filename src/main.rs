@@ -84,34 +84,59 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // setup scrap
     timer_start!(scrap);
-    let disp = Display::primary()?;
-    let mut capture = Capturer::new(disp)?;
-    let (w, h) = (capture.width(), capture.height());
-    timer_time!("Setting up scrap", scrap);
 
-    // take the screenshot
-    timer_start!(screenshot);
-    let mut buffer: Frame;
-    loop {
-        match capture.frame() {
-            Ok(buf) => {
-                buffer = buf;
-                break;
-            }
-            Err(e) => {
-                if e.kind() == WouldBlock {
-                    sleep(Duration::from_millis(33));
-                    continue;
+    let mut max_height  = 0;
+    let mut total_width = 0;
+    for disp in Display::all()? {
+        total_width += disp.width();
+        if disp.height() > max_height {
+            max_height = disp.height();
+        }
+        println!("Found display w/ left {}", disp.left());
+    }
+
+    let mut multimon_buffer = vec![rgb::alt::BGRA::<u8>::default(); total_width * max_height];
+    
+    for (i, disp) in Display::all()?.into_iter().enumerate() {
+        let x_offset = disp.left() as usize;
+        let mut capture = Capturer::new(disp)?;
+
+        let (w, h) = (capture.width(), capture.height());
+        timer_time!("Setting up scrap", scrap);
+
+        // take the screenshot
+        timer_start!(screenshot);
+        let mut buffer: Frame;
+        loop {
+            match capture.frame() {
+                Ok(buf) => {
+                    buffer = buf;
+                    break;
+                }
+                Err(e) => {
+                    if e.kind() == WouldBlock {
+                        sleep(Duration::from_millis(33));
+                        continue;
+                    }
                 }
             }
         }
-    }
-    timer_time!("Capturing screenshot", screenshot);
+        timer_time!(format!("Capturing screenshot on display {}", i), screenshot);
 
-    // convert to imgref
+        // convert to imgref
+        let buf_bgra = buffer.as_bgra_mut();
+        for y in 0..h {
+            let src_start = w * y;
+            let src_end   = src_start + w;
+            let dst_start = y * total_width + x_offset;
+            let dst_end   = dst_start + w;
+            
+            multimon_buffer[dst_start..dst_end].copy_from_slice(&buf_bgra[src_start..src_end]);
+        }
+    }
+
     timer_start!(convert);
-    let buf_bgra = buffer.as_bgra_mut();
-    let mut screenshot = ImgRefMut::new(buf_bgra, w, h);
+    let mut screenshot = ImgRefMut::new(&mut multimon_buffer, total_width, max_height);
     timer_time!("Converting image", convert);
 
     // scaling is unsafe
@@ -241,7 +266,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             "-i",
             "/dev/stdin",
             //FIXME
-            &format!("--raw={}x{}:native", w, h),
+            &format!("--raw={}x{}:native", total_width, max_height),
         ])
         .args(args.i3lock)
         .stdin(Stdio::piped())
