@@ -92,7 +92,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         if disp.height() > max_height {
             max_height = disp.height();
         }
-        println!("Found display w/ left {}", disp.left());
     }
 
     let mut multimon_buffer = vec![rgb::alt::BGRA::<u8>::default(); total_width * max_height];
