@@ -85,19 +85,22 @@ fn main() -> Result<(), Box<dyn Error>> {
     // setup scrap
     timer_start!(scrap);
 
-    let mut max_height  = 0;
-    let mut total_width = 0;
+    let mut max_height: usize = 0;
+    let mut max_width:  usize = 0;
     for disp in Display::all()? {
-        total_width += disp.width();
-        if disp.height() > max_height {
-            max_height = disp.height();
+        if disp.bottom() as usize > max_height {
+            max_height = disp.bottom() as usize;
+        }
+        if disp.right() as usize > max_width {
+            max_width = disp.right() as usize;
         }
     }
 
-    let mut multimon_buffer = vec![rgb::alt::BGRA::<u8>::default(); total_width * max_height];
+    let mut multimon_buffer = vec![rgb::alt::BGRA::<u8>::default(); max_width * max_height];
     
     for (i, disp) in Display::all()?.into_iter().enumerate() {
         let x_offset = disp.left() as usize;
+        let y_offset = disp.top() as usize;
         let mut capture = Capturer::new(disp)?;
 
         let (w, h) = (capture.width(), capture.height());
@@ -127,7 +130,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         for y in 0..h {
             let src_start = w * y;
             let src_end   = src_start + w;
-            let dst_start = y * total_width + x_offset;
+            let dst_start = (y + y_offset) * max_width + x_offset;
             let dst_end   = dst_start + w;
             
             multimon_buffer[dst_start..dst_end].copy_from_slice(&buf_bgra[src_start..src_end]);
@@ -135,7 +138,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     timer_start!(convert);
-    let mut screenshot = ImgRefMut::new(&mut multimon_buffer, total_width, max_height);
+    let mut screenshot = ImgRefMut::new(&mut multimon_buffer, max_width, max_height);
     timer_time!("Converting image", convert);
 
     // scaling is unsafe
@@ -265,7 +268,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             "-i",
             "/dev/stdin",
             //FIXME
-            &format!("--raw={}x{}:native", total_width, max_height),
+            &format!("--raw={}x{}:native", max_width, max_height),
         ])
         .args(args.i3lock)
         .stdin(Stdio::piped())
