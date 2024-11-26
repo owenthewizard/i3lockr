@@ -74,7 +74,7 @@ impl Compose for ImgRefMut<'_, BGRA8> {
                 .zip(m.pixels())
                 .filter(|(_, mask_px)| mask_px.a > MASK_THRESHOLD)
             {
-                *view_px = view_px.map_c(|c| !c);
+                *view_px = view_px.map_colors(|c| !c);
             }
 
             #[cfg(feature = "threads")]
@@ -86,19 +86,19 @@ impl Compose for ImgRefMut<'_, BGRA8> {
                         .zip(mask_row.iter().copied())
                         .filter(|(_, mask_px)| mask_px.a > MASK_THRESHOLD)
                     {
-                        *view_px = view_px.map_c(|c| !c);
+                        *view_px = view_px.map_colors(|c| !c);
                     }
                 });
         } else {
             #[cfg(not(feature = "threads"))]
             for pixel in self.pixels_mut() {
-                *pixel = pixel.map_c(|c| !c);
+                *pixel = pixel.map_colors(|c| !c);
             }
 
             #[cfg(feature = "threads")]
             self.rows_mut().par_bridge().for_each(|r| {
                 for pixel in r.iter_mut() {
-                    *pixel = pixel.map_c(|c| !c);
+                    *pixel = pixel.map_colors(|c| !c);
                 }
             });
         }

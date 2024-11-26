@@ -21,7 +21,7 @@ maintenance = { status = "actively-developed" }
 blend-srgb = { version = "0.1", optional = true }
 imagefmt = { version = "4", default-features = false, optional = true }
 imgref = "1"
-itertools = { version = "0.12", optional = true }
+itertools = { version = "0.13", optional = true }
 libc = "0.2" # should be same as xcb
 num_cpus = "1"
 rayon = { version = "1", optional = true }

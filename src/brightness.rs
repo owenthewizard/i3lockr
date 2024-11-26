@@ -17,13 +17,13 @@ impl BrightnessAdj for ImgRefMut<'_, BGRA8> {
     fn brighten(&mut self, amt: NonZeroU8) {
         #[cfg(not(feature = "threads"))]
         for pixel in self.pixels_mut() {
-            *pixel = pixel.map_c(|c| c.saturating_add(amt.get()));
+            *pixel = pixel.map_colors(|c| c.saturating_add(amt.get()));
         }
 
         #[cfg(feature = "threads")]
         self.rows_mut().par_bridge().for_each(|row| {
             for pixel in row.iter_mut() {
-                *pixel = pixel.map_c(|c| c.saturating_add(amt.get()));
+                *pixel = pixel.map_colors(|c| c.saturating_add(amt.get()));
             }
         });
     }
@@ -31,13 +31,13 @@ impl BrightnessAdj for ImgRefMut<'_, BGRA8> {
     fn darken(&mut self, amt: NonZeroU8) {
         #[cfg(not(feature = "threads"))]
         for pixel in self.pixels_mut() {
-            *pixel = pixel.map_c(|c| c.saturating_sub(amt.get()));
+            *pixel = pixel.map_colors(|c| c.saturating_sub(amt.get()));
         }
 
         #[cfg(feature = "threads")]
         self.rows_mut().par_bridge().for_each(|row| {
             for pixel in row.iter_mut() {
-                *pixel = pixel.map_c(|c| c.saturating_sub(amt.get()));
+                *pixel = pixel.map_colors(|c| c.saturating_sub(amt.get()));
             }
         });
     }
