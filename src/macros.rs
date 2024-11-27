@@ -17,10 +17,10 @@ macro_rules! warn_disabled {
     ($s:expr) => {
         eprintln!(
             "{}",
-            Format::Warning(format!(
+            format!(
                 "Feature \"{f}\" was not enabled at compile-time. Skipping {f}.",
                 f = $s
-            ))
+            )
         );
     };
 }
@@ -42,9 +42,9 @@ macro_rules! time_routine {
         {
             eprintln!(
                 "{}",
-                Format::Warning(format!(
-                        "Feature {} was not enabled at compile-time. Skipping {}.", stringify!($feat), stringify!($F)
-                ))
+                format!(
+                    "Feature {} was not enabled at compile-time. Skipping {}.", stringify!($feat), stringify!($F)
+                )
             );
         }
         }

@@ -1,89 +1,79 @@
-use std::ffi::OsString;
 use std::num::{NonZeroU8, NonZeroUsize};
 use std::path::PathBuf;
 
-use structopt::StructOpt;
-
-mod validators;
+use clap::{ArgAction, Parser};
 
 /// Distort a screenshot and run i3lock
-// Needs to be fixed upstream in StructOpt
-// TODO: checked if my PR is merged
-#[derive(StructOpt, Debug)]
+#[derive(Parser, Debug)]
 pub struct Cli {
     /// Prints version information
-    #[structopt(short = "V", long = "version", alias = "vers")]
+    #[arg(short = 'V', long = "version", alias = "vers")]
     pub version: bool,
 
     /// Print how long each step takes, among other things.
     /// Always enabled in debug builds.
-    #[structopt(short = "v", long = "verbose", alias = "verb", alias = "debug")]
+    #[arg(short = 'v', long = "verbose", alias = "verb", alias = "debug")]
     pub verbose: bool,
 
     /// Darken the screenshot by [1, 255]. Example: 15
-    #[structopt(long = "darken", visible_alias = "dark", conflicts_with = "bright")]
+    #[arg(long = "darken", visible_alias = "dark", conflicts_with = "bright")]
     pub dark: Option<NonZeroU8>,
 
     /// Brighten the screenshot by [1, 255]. Example: 15
-    #[structopt(long = "brighten", visible_alias = "bright")]
+    #[arg(long = "brighten", visible_alias = "bright")]
     pub bright: Option<NonZeroU8>,
 
     /// Blur strength. Example: 10
-    #[structopt(short = "b", long = "blur", alias = "rad")]
+    #[arg(short = 'b', long = "blur", alias = "rad")]
     pub radius: Option<NonZeroUsize>,
 
     /// Scale factor. Increases blur strength by a factor of this. Example: 2
-    #[structopt(short = "p", long = "scale")]
+    #[arg(short = 'p', long = "scale")]
     pub factor: Option<NonZeroUsize>,
 
     /// Don't overlay an icon on these monitors. Useful if you're mirroring displays. Must be comma separated.
     /// Example: 0,2
-    #[structopt(
+    #[arg(
         long = "ignore-monitors",
         value_name = "0,2",
-        require_delimiter = true,
-        validator = validators::has_compose,
+        value_delimiter = ',',
         visible_alias = "ignore"
     )]
     pub ignore: Vec<usize>,
 
     /// Interpret the icon as a mask, inverting masked pixels
     /// on the screenshot. Try it to see an example.
-    #[structopt(long = "invert", validator = validators::has_compose)]
+    #[arg(long = "invert")]
     pub invert: bool,
 
     /// Icon placement, "x,y" (from top-left), or "-x,-y" (from bottom-right).
     /// Has no effect without --icon. Must be comma separated. Defaults to center if not specified.
     /// Example: "945,-20"
-    #[structopt(
-        short = "u",
+    #[arg(
+        short = 'u',
         long = "position",
         allow_hyphen_values = true,
         value_name = "945,-20",
-        number_of_values = 2,
-        require_delimiter = true,
-        validator = validators::has_compose,
+        num_args = 1,
+        value_delimiter = ',',
+        allow_negative_numbers = true,
         visible_alias = "pos"
     )]
     pub pos: Vec<isize>,
 
     /// Path to icon to overlay on screenshot.
-    #[structopt(
-        short = "i",
+    #[arg(
+        short = 'i',
         long = "icon",
         value_name = "file.png",
-        parse(from_os_str),
-        validator = validators::has_compose
     )]
     pub path: Option<PathBuf>,
 
     /// Arguments to pass to i3lock. Example: "--nofork --ignore-empty-password"
-    #[structopt(
+    #[arg(
         value_name = "i3lock",
-        takes_value = true,
-        multiple = true,
-        parse(from_os_str),
+        action = ArgAction::Append,
         last = true
     )]
-    pub i3lock: Vec<OsString>,
+    pub i3lock: Vec<String>,
 }

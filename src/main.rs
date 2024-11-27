@@ -15,8 +15,7 @@ use rgb::{ComponentBytes, FromSlice};
 
 use scrap::{Capturer, Display, Frame};
 
-use structopt::clap::Format;
-use structopt::StructOpt;
+use clap::Parser;
 
 use xcb::Connection;
 
@@ -55,7 +54,7 @@ use overlay::Compose;
 fn main() -> Result<(), Box<dyn Error>> {
     timer_start!(everything);
     // parse args, handle custom `--version`
-    let args = Cli::from_args();
+    let args = Cli::parse();
     if args.version {
         eprintln!(
             "{} v{} compiled for '{}' at {} ({}@{})",
@@ -182,10 +181,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     if image.width() > w || image.height() > h {
                         eprintln!(
                             "{}",
-                            Format::Warning(
-                                "Your image is larger than your monitor, image positions may be off!"
-                                )
-                            );
+                            "Your image is larger than your monitor, image positions may be off!"
+                        );
                     }
                     (
                         w / 2 - image.width() / 2 + x,
