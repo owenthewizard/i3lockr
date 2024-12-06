@@ -34,16 +34,16 @@ clap = { version = "4", default-features = true, features = ["std", "derive", "c
 clap_complete = "4"
 
 [features]
-suggestions = ["clap/suggestions"]
-color = ["clap/color"]
-png = ["imagefmt/png", "dep:blend-srgb"]
-jpeg = ["imagefmt/jpeg", "dep:blend-srgb"]
-threads = ["dep:rayon", "stackblur-iter?/rayon"]
 blur = ["dep:stackblur-iter"]
-scale = ["dep:itertools"]
 brightness = []
+color = ["clap/color"]
+default = ["blur", "brightness", "color", "jpeg", "png", "scale", "suggestions", "threads"]
+jpeg = ["imagefmt/jpeg", "dep:blend-srgb"]
+png = ["imagefmt/png", "dep:blend-srgb"]
+scale = ["dep:itertools"]
+suggestions = ["clap/suggestions"]
+threads = ["dep:rayon", "stackblur-iter?/rayon"]
 verbose = []
-default = ["suggestions", "color", "png", "jpeg", "threads", "blur", "scale", "brightness"]
 
 [profile.release]
 lto = "fat"

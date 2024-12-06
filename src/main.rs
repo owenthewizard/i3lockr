@@ -1,13 +1,11 @@
-use std::borrow::Cow;
 use std::error::Error;
-use std::hint::unreachable_unchecked;
 use std::io::ErrorKind::WouldBlock;
 use std::io::{self, Write};
-use std::process::{Command, ExitStatus, Stdio};
-use std::time::{Duration, Instant};
-
+use std::num::TryFromIntError;
 use std::os::unix::process::ExitStatusExt;
+use std::process::{Command, ExitStatus, Stdio};
 use std::thread::sleep;
+use std::time::{Duration, Instant};
 
 use imgref::ImgRefMut;
 
@@ -17,6 +15,7 @@ use scrap::{Capturer, Display, Frame};
 
 use clap::Parser;
 
+#[cfg(any(feature = "png", feature = "jpeg"))]
 use xcb::Connection;
 
 mod cli;
@@ -79,6 +78,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     debug!("Found args: {:#?}", args);
 
+    #[cfg(any(feature = "png", feature = "jpeg"))]
     let (conn, screen_num) = Connection::connect(None)?;
 
     // setup scrap
@@ -148,7 +148,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let screen = conn
                 .get_setup()
                 .roots()
-                .nth(screen_num as usize)
+                .nth(usize::try_from(screen_num)?)
                 .unwrap_or_else(|| unreachable!());
 
             let cookie = conn.send_request(&randr::GetScreenResources {
@@ -156,7 +156,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             });
             let reply = conn.wait_for_reply(cookie)?;
 
-            for (w, h, x, y) in reply
+            let monitors = reply
                 .crtcs()
                 .iter()
                 .filter_map(|crtc| {
@@ -168,19 +168,20 @@ fn main() -> Result<(), Box<dyn Error>> {
                 })
                 .enumerate()
                 .filter(|(i, m)| !m.mode().is_none() && !args.ignore.contains(i))
-                .map(|(_, m)| {
-                    (
-                        usize::from(m.width()),
-                        usize::from(m.height()),
-                        m.x() as usize,
-                        m.y() as usize,
-                    )
+                .map(|(_, m)| -> Result<_, _> {
+                    Ok((
+                        Ok::<_, TryFromIntError>(usize::from(m.width()))?,
+                        Ok::<_, TryFromIntError>(usize::from(m.height()))?,
+                        usize::try_from(m.x())?,
+                        usize::try_from(m.y())?,
+                    ))
                 })
-            {
+                .collect::<Result<Vec<(_, _, _, _)>, TryFromIntError>>()?;
+
+            for (w, h, x, y) in monitors {
                 let (x_off, y_off) = if args.pos.is_empty() {
                     if image.width() > w || image.height() > h {
                         eprintln!(
-                            "{}",
                             "Your image is larger than your monitor, image positions may be off!"
                         );
                     }
@@ -228,17 +229,17 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // check if we're forking
     timer_start!(fork);
-    let nofork = forking(args.i3lock.iter().map(|x| x.as_os_str().to_string_lossy()));
+    let nofork = forking(args.i3lock.iter().map(String::as_str));
     timer_time!("Checking for nofork", fork);
 
     // call i3lock
     debug!("Calling i3lock with args: {:?}", args.i3lock);
     let mut cmd = Command::new("i3lock")
-        .args(&[
+        .args([
             "-i",
             "/dev/stdin",
             //FIXME
-            &format!("--raw={}x{}:native", w, h),
+            format!("--raw={w}x{h}:native").as_str(),
         ])
         .args(args.i3lock)
         .stdin(Stdio::piped())
@@ -277,7 +278,7 @@ fn status_to_result(status: ExitStatus) -> Result<(), Box<dyn Error>> {
             "Killed by signal: {}",
             status
                 .signal()
-                .unwrap_or_else(|| unsafe { unreachable_unchecked() })
+                .unwrap()
         )
         .into())
     }
@@ -286,26 +287,20 @@ fn status_to_result(status: ExitStatus) -> Result<(), Box<dyn Error>> {
 // credit: @williewillus#8490
 #[cfg(any(feature = "png", feature = "jpeg"))]
 const fn wrap_to_screen(idx: isize, len: usize) -> usize {
-    if idx.is_negative() {
-        let pos = -idx as usize % len;
-        if pos == 0 {
-            0
-        } else {
-            len - pos
-        }
+    let pos = idx.unsigned_abs() % len;
+    if pos == 0 {
+        0
     } else {
-        idx as usize % len
+        len - pos
     }
 }
 
-fn forking<'a, I>(args: I) -> bool
+#[inline]
+fn forking<'a, I>(mut args: I) -> bool
 where
-    I: Iterator<Item = Cow<'a, str>> + Clone,
+    I: Iterator<Item = &'a str>,
 {
-    args.clone().any(|x| x == "--nofork")
-        || args
-            .filter(|x| !x.starts_with("--"))
-            .any(|x| x.contains('n'))
+    args.any(|x| x == "--nofork" || (!x.starts_with("--") && x.contains('n')))
 }
 
 #[cfg(test)]
@@ -321,8 +316,7 @@ mod tests {
                 "--ringcolor=ffffffff",
                 "--line-uses-inside"
             ]
-            .iter()
-            .map(|x| Cow::Borrowed(*x))
+            .into_iter()
         ));
         assert!(!forking(
             [
@@ -330,8 +324,7 @@ mod tests {
                 "--ringcolor=ffffffff",
                 "--line-uses-inside"
             ]
-            .iter()
-            .map(|x| Cow::Borrowed(*x))
+            .into_iter()
         ));
         assert!(forking(
             [
@@ -340,8 +333,7 @@ mod tests {
                 "-en",
                 "--line-uses-inside"
             ]
-            .iter()
-            .map(|x| Cow::Borrowed(*x))
+            .into_iter()
         ));
         assert!(!forking(
             [
@@ -350,8 +342,7 @@ mod tests {
                 "--insidecolor=542095ff",
                 "--line-uses-inside"
             ]
-            .iter()
-            .map(|x| Cow::Borrowed(*x))
+            .into_iter()
         ));
     }
 }

@@ -17,6 +17,7 @@ pub trait Compose {
 }
 
 impl Compose for ImgRefMut<'_, BGRA8> {
+    #[allow(clippy::many_single_char_names)]
     fn compose(&mut self, top: ImgRef<BGRA8>, x: usize, y: usize) {
         let mut bot = self.sub_image_mut(x, y, top.width(), top.height());
 
