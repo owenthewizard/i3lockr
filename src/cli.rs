@@ -62,11 +62,7 @@ pub struct Cli {
     pub pos: Vec<isize>,
 
     /// Path to icon to overlay on screenshot.
-    #[arg(
-        short = 'i',
-        long = "icon",
-        value_name = "file.png",
-    )]
+    #[arg(short = 'i', long = "icon", value_name = "file.png")]
     pub path: Option<PathBuf>,
 
     /// Arguments to pass to i3lock. Example: "--nofork --ignore-empty-password"
