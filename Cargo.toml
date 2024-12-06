@@ -28,6 +28,7 @@ scrap = { git = "https://github.com/owenthewizard/scrap" }
 stackblur-iter = { version = "0.2", optional = true, features = ["blend-srgb"] }
 clap = { version = "4", default-features = true, features = ["std", "derive", "help", "usage", "error-context", "wrap_help"] }
 xcb = { version = "1", features = ["randr", "shm"] }
+getargs = "0.5"
 
 [build-dependencies]
 clap = { version = "4", default-features = true, features = ["std", "derive", "cargo"] }
@@ -49,3 +50,7 @@ verbose = []
 lto = "fat"
 codegen-units = 1
 strip = true
+
+[package.metadata.cargo-all-features]
+skip_feature_sets = [["png", "jpeg"]]
+denylist = ["color", "suggestions", "imagefmt", "verbose"]

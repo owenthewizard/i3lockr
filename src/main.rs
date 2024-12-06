@@ -1,3 +1,5 @@
+#![cfg_attr(test, allow(warnings))]
+
 use std::error::Error;
 use std::io::ErrorKind::WouldBlock;
 use std::io::{self, Write};
@@ -7,13 +9,11 @@ use std::process::{Command, ExitStatus, Stdio};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use imgref::ImgRefMut;
-
-use rgb::{ComponentBytes, FromSlice};
-
-use scrap::{Capturer, Display, Frame};
-
 use clap::Parser;
+use getargs::{Opt, Options};
+use imgref::ImgRefMut;
+use rgb::{ComponentBytes, FromSlice};
+use scrap::{Capturer, Display, Frame};
 
 #[cfg(any(feature = "png", feature = "jpeg"))]
 use xcb::Connection;
@@ -229,7 +229,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // check if we're forking
     timer_start!(fork);
-    let nofork = forking(args.i3lock.iter().map(String::as_str));
+    let forking = forking(args.i3lock.iter().map(String::as_str));
     timer_time!("Checking for nofork", fork);
 
     // call i3lock
@@ -253,16 +253,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     timer_time!("Everything", everything);
 
-    if nofork {
-        debug!("Asked i3lock not to fork, calling wait()");
-        match cmd.wait() {
-            Ok(status) => status_to_result(status),
-            Err(e) => Err(e.into()),
-        }
-    } else {
+    if forking {
         match cmd.try_wait() {
             Ok(None) => Ok(()),
             Ok(Some(status)) => status_to_result(status),
+            Err(e) => Err(e.into()),
+        }
+    } else {
+        debug!("Asked i3lock not to fork, calling wait()");
+        match cmd.wait() {
+            Ok(status) => status_to_result(status),
             Err(e) => Err(e.into()),
         }
     }
@@ -274,13 +274,7 @@ fn status_to_result(status: ExitStatus) -> Result<(), Box<dyn Error>> {
     } else if let Some(code) = status.code() {
         Err(io::Error::from_raw_os_error(code).into())
     } else {
-        Err(format!(
-            "Killed by signal: {}",
-            status
-                .signal()
-                .unwrap()
-        )
-        .into())
+        Err(format!("Killed by signal: {}", status.signal().unwrap()).into())
     }
 }
 
@@ -295,12 +289,18 @@ const fn wrap_to_screen(idx: isize, len: usize) -> usize {
     }
 }
 
-#[inline]
-fn forking<'a, I>(mut args: I) -> bool
+fn forking<'a, I>(args: I) -> bool
 where
     I: Iterator<Item = &'a str>,
 {
-    args.any(|x| x == "--nofork" || (!x.starts_with("--") && x.contains('n')))
+    let mut opts = Options::new(args);
+    while let Some(opt) = opts.next_opt().unwrap() {
+        match opt {
+            Opt::Short('n') | Opt::Long("nofork") => return false,
+            _ => continue,
+        };
+    }
+    true
 }
 
 #[cfg(test)]
@@ -308,41 +308,29 @@ mod tests {
     use super::*;
 
     #[test]
-    fn nofork() {
+    fn forking_short() {
+        assert!(!forking(["-a", "-n", "-b"].into_iter()))
+    }
+
+    #[test]
+    fn forking_short_grouped() {
+        assert!(!forking(["-abcdefghijklmnopqrstuvwxyz"].into_iter()))
+    }
+
+    #[test]
+    fn forking_long() {
+        assert!(!forking(["--abc", "--nofork", "--xyz"].into_iter()))
+    }
+
+    #[test]
+    fn _forking() {
         assert!(forking(
-            [
-                "-n",
-                "--insidecolor=542095ff",
-                "--ringcolor=ffffffff",
-                "--line-uses-inside"
-            ]
-            .into_iter()
-        ));
-        assert!(!forking(
-            [
-                "--insidecolor=542095ff",
-                "--ringcolor=ffffffff",
-                "--line-uses-inside"
-            ]
-            .into_iter()
-        ));
-        assert!(forking(
-            [
-                "--insidecolor=542095ff",
-                "--ringcolor=ffffffff",
-                "-en",
-                "--line-uses-inside"
-            ]
-            .into_iter()
-        ));
-        assert!(!forking(
-            [
-                "--ringcolor=ffffffff",
-                "-e",
-                "--insidecolor=542095ff",
-                "--line-uses-inside"
-            ]
-            .into_iter()
-        ));
+            ["--abc", "--image", "image-nofork.png", "--nofork.png"].into_iter()
+        ))
+    }
+
+    #[test]
+    fn forking_positional() {
+        assert!(forking(["--abc", "--", "--nofork"].into_iter()))
     }
 }
