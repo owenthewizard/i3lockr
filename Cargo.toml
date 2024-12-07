@@ -50,6 +50,7 @@ verbose = []
 lto = "fat"
 codegen-units = 1
 strip = true
+panic = "abort"
 
 [package.metadata.cargo-all-features]
 skip_feature_sets = [["png", "jpeg"]]
