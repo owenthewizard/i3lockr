@@ -50,6 +50,6 @@ jobs:
       - name: cargo build
         run: cargo build --all --quiet
       - name: cargo-all-features
-        run: cargo install cargo-all-features
+        run: cargo install cargo-all-features --quiet
       - name: cargo test
         run: env RUSTFLAGS="-Awarnings" cargo test-all-features --all --quiet
