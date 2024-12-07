@@ -1,0 +1,37 @@
+name: Security Audit
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - master
+    paths:
+      - ".github/workflows/rustsec.yml"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/audit.toml"
+  push:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/rustsec.yml"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/audit.toml"
+  schedule:
+    - cron: '15 19 * * 1'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/audit@v1

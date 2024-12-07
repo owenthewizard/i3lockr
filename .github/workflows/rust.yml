@@ -1,24 +1,55 @@
 name: Rust
 
 on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - master
+    paths:
+      - ".github/workflows/rust.yml"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/*.rs"
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    branches:
+      - master
+    paths:
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/*.rs"
+      - ".github/workflows/rust.yml"
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  build:
-
+  format:
+    name: cargo fmt
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Install xcb
-      run: sudo apt install -y  libxcb1-dev libxcb-randr0-dev  libxcb-shm0-dev
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v4
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
+
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo check
+        run: cargo check --all --quiet
+      - name: cargo build
+        run: cargo build --all --quiet
+      - name: cargo-all-features
+        run: cargo install cargo-all-features
+      - name: cargo test
+        run: env RUSTFLAGS="-Awarnings" cargo test-all-features --all --quiet

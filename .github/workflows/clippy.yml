@@ -1,0 +1,37 @@
+name: Clippy
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - master
+    paths:
+      - ".github/workflows/clippy.yml"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/*.rs"
+  push:
+    branches:
+      - master
+    paths:
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/*.rs"
+      - ".github/workflows/clippy.yml"
+
+env:
+  CARGO_TERM_COLOR: always
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  lint:
+    name: cargo clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo clippy
+        run: cargo clippy --all --quiet -- -W clippy::nursery -W clippy::pedantic
